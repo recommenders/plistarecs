@@ -1,0 +1,1 @@
+mvn exec:java -Dplista.teamid=TEAMID

@@ -1,1 +1,9 @@
 target/
+
+contest.log
+
+*.iml
+
+*.log
+
+*.2013-08-01
