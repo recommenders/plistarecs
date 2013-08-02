@@ -60,10 +60,6 @@
                 </executions>
                 <configuration>
                     <mainClass>de.dailab.plistacontest.client.Client</mainClass>
-                    <arguments>
-                        <argument>teamid.properties</argument>
-                        <argument>de.dailab.plistacontest.recommender.ContestMPRecommender</argument>
-                    </arguments>
                     <systemProperties>
                         <systemProperty>
                             <key>plista.team</key>
