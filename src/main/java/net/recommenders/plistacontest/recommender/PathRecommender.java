@@ -58,7 +58,7 @@ public class PathRecommender implements ContestRecommender {
             while (n < size) {
                 WeightedItem wi = path.get(i);
                 i++;
-                if (forbiddenItems.contains(wi.getItem())) {
+                if (forbiddenItems.contains(wi.getItem()) || _item.equals(wi.getItem())) {
                     continue; // ignore this item
                 }
                 long id = wi.getItemId();

@@ -1,25 +1,23 @@
 package net.recommenders.plistacontest.recommender;
 
-import de.dailab.plistacontest.helper.DateHelper;
-import de.dailab.plistacontest.helper.FalseItems;
-import de.dailab.plistacontest.helper.StatsWriter;
 import de.dailab.plistacontest.recommender.ContestItem;
 import de.dailab.plistacontest.recommender.ContestRecommender;
+import java.io.File;
+import java.io.FileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.log4j.Logger;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.HashMap;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import net.recommenders.plistacontest.utils.JsonUtils;
 
 /**
  *
@@ -28,84 +26,140 @@ import java.util.Set;
 public class CategoryBasedRecommender implements ContestRecommender {
 
     private static Logger logger = Logger.getLogger(CategoryBasedRecommender.class);
-    private FalseItems falseItems;
-    private Map<String, Map<String, Set<Long>>> mapDomainCategoryItems;
+    private Set<Long> forbiddenItems;
+    private Map<Integer, Map<Integer, Set<Long>>> mapDomainCategoryItems;
+    private Map<Integer, Set<Long>> mapDomainItems;
 
     public CategoryBasedRecommender() {
-        falseItems = new FalseItems();
-        mapDomainCategoryItems = new HashMap<String, Map<String, Set<Long>>>();
+        mapDomainCategoryItems = new ConcurrentHashMap<Integer, Map<Integer, Set<Long>>>();
+        mapDomainItems = new ConcurrentHashMap<Integer, Set<Long>>();
+        forbiddenItems = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
     }
 
     public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        final List<ContestItem> recList = new ArrayList<ContestItem>();
+
+        int limit = Integer.parseInt(_limit);
+        int domain = Integer.parseInt(_domain);
+        Integer category = JsonUtils.getContextCategoryIdFromImpression(_description);
+
+        final Set<Long> recItems = new HashSet<Long>();
+        if (category != null) {
+            Map<Integer, Set<Long>> categoryItems = mapDomainCategoryItems.get(domain);
+            if (categoryItems != null) {
+                Set<Long> candidateItems = categoryItems.get(category);
+                if (candidateItems != null) {
+                    int n = 0;
+                    int size = Math.min(limit, candidateItems.size());
+                    // TODO: improve this iteration using some popularity information or recency
+                    for (Long candidate : candidateItems) {
+                        if (n >= size) {
+                            break;
+                        }
+                        if (forbiddenItems.contains(candidate)) {
+                            continue; // ignore this item
+                        }
+                        recList.add(new ContestItem(candidate));
+                        recItems.add(candidate);
+                        n++;
+                    }
+                }
+            }
+        }
+
+        completeList(recList, recItems, mapDomainItems.get(domain), limit - recList.size(), forbiddenItems);
+
+        return recList;
+    }
+
+    private static void completeList(List<ContestItem> recList, Set<Long> itemsAlreadyRecommended, Set<Long> domainItems, int howMany, Set<Long> forbiddenItems) {
+        int n = 0;
+        // TODO: improve this iteration using some popularity information or recency
+        for (Long item : domainItems) {
+            if (n >= howMany) {
+                break;
+            }
+            if (!forbiddenItems.contains(item) && !itemsAlreadyRecommended.contains(item)) {
+                recList.add(new ContestItem(item));
+                itemsAlreadyRecommended.add(item);
+                n++;
+            }
+        }
     }
 
     public void init() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        FileFilter logFilter = new WildcardFileFilter("contest.log*");
+        final File dir = new File(".");
+        File[] logs = dir.listFiles(logFilter);
+        for (File file : logs) {
+            Scanner scnr = null;
+            try {
+                scnr = new Scanner(file, "US-ASCII");
+            } catch (FileNotFoundException e) {
+                logger.error(e.getMessage());
+            }
+            while (scnr.hasNextLine()) {
+                String line = scnr.nextLine();
+                line = line.substring(0, line.length() - 24);
+                if (JsonUtils.isImpression(line)) {
+                    impression(line);
+                }
+                if (JsonUtils.isFeedback(line)) {
+                    feedback(line);
+                }
+            }
+        }
     }
 
     public void impression(String _impression) {
-        final JSONObject jObj = (JSONObject) JSONValue.parse(_impression);
-        final String domain = ((JSONObject) jObj.get("domain")).get("id").toString();
+        Integer domainId = JsonUtils.getDomainIdFromImpression(_impression);
+        String item = JsonUtils.getItemIdFromImpression(_impression);
+        Integer category = JsonUtils.getContextCategoryIdFromImpression(_impression);
 
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if ((domainId != null) && (item != null) && (category != null)) {
+            update(domainId, item, category);
+        }
+    }
+
+    private void update(int domainId, String item, int category) {
+        Map<Integer, Set<Long>> categoryItems = mapDomainCategoryItems.get(domainId);
+        if (categoryItems == null) {
+            categoryItems = new ConcurrentHashMap<Integer, Set<Long>>();
+            mapDomainCategoryItems.put(domainId, categoryItems);
+        }
+        Set<Long> items = categoryItems.get(category);
+        if (items == null) {
+            items = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+            categoryItems.put(category, items);
+        }
+        items.add(Long.parseLong(item));
     }
 
     public void feedback(String _feedback) {
-        final JSONObject jObj = (JSONObject) JSONValue.parse(_feedback);
-        final String client = ((JSONObject) jObj.get("client")).get("id").toString();
-        final String item = ((JSONObject) jObj.get("target")).get("id").toString();
+        Integer domainId = JsonUtils.getDomainIdFromFeedback(_feedback);
+        String source = JsonUtils.getSourceIdFromFeedback(_feedback);
+        String target = JsonUtils.getTargetIdFromFeedback(_feedback);
+        Integer category = JsonUtils.getContextCategoryIdFromImpression(_feedback);
 
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if ((domainId != null) && (source != null) && (category != null)) {
+            update(domainId, source, category);
+        }
+        if ((domainId != null) && (target != null) && (category != null)) {
+            update(domainId, target, category);
+        }
     }
 
     public void error(String _error) {
         logger.error(_error);
-        // {"error":"invalid items returned:89194287","team":{"id":"65"},"code":null,"version":"1.0"}
-        try {
-            final JSONObject jErrorObj = (JSONObject) JSONValue.parse(_error);
-            if (jErrorObj.containsKey("error")) {
-                String error = jErrorObj.get("error").toString();
-                if (error.contains("invalid items returned:")) {
-                    String tmpError = error.replace("invalid items returned:", "");
-                    String[] errorItems = tmpError.split(",");
-                    for (String errorItem : errorItems) {
-                        this.falseItems.addItem(Long.parseLong(errorItem));
-                    }
-                }
+        String[] invalidItems = JsonUtils.getInvalidItemsFromError(_error);
+        if (invalidItems != null) {
+            // since domain is optional, we cannot store the forbidden items per domain
+            for (String item : invalidItems) {
+                forbiddenItems.add(Long.parseLong(item));
             }
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-        }
-        serialize(this.falseItems);
-    }
-
-    private void serialize(final FalseItems _falseItemse) {
-        try {
-            final FileOutputStream fileOut = new FileOutputStream("falseitems_cbr.ser");
-            final ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(_falseItemse);
-            out.close();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-    }
-
-    private void deserialize() {
-        try {
-            final FileInputStream fileIn = new FileInputStream("falseitems_cbr.ser");
-            final ObjectInputStream in = new ObjectInputStream(fileIn);
-            this.falseItems = (FalseItems) in.readObject();
-            in.close();
-            fileIn.close();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        } catch (ClassNotFoundException e1) {
-            logger.error(e1.getMessage());
         }
     }
 
     public void setProperties(Properties properties) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
