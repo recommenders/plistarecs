@@ -2,7 +2,6 @@ package net.recommenders.plistacontest.recommender;
 
 import de.dailab.plistacontest.helper.DateHelper;
 import de.dailab.plistacontest.helper.FalseItems;
-import de.dailab.plistacontest.helper.MahoutWriter;
 import de.dailab.plistacontest.helper.StatsWriter;
 import de.dailab.plistacontest.recommender.ContestItem;
 import de.dailab.plistacontest.recommender.ContestRecommender;
@@ -22,7 +21,9 @@ import org.json.simple.JSONValue;
 
 import java.io.*;
 import java.util.*;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An index for news articles
@@ -30,20 +31,23 @@ import java.util.*;
  * @author alan
  */
 public class ContestLuceneRecommender implements ContestRecommender {
+
     private static final Logger logger = Logger.getLogger(ContestLuceneRecommender.class);
     private final Map<String, IndexWriter> domainWriter = new HashMap<String, IndexWriter>();
     private final Map<String, IndexReader> domainReader = new HashMap<String, IndexReader>();
     private Map<String, HashSet<String>> indexedDocs = new HashMap<String, HashSet<String>>();
     private Map<String, Document> cachedDocs = new HashMap<String, Document>();
+    private static final int NUM_THREADS = 5;
+    private ExecutorService pool = Executors.newFixedThreadPool(NUM_THREADS);
     public static final Analyzer ANALYZER = new GermanAnalyzer(Version.LUCENE_43);
     //no of days old articles to recommend
     private static final int days = 3;
-
     final Map<String, Integer> counter = new HashMap<String, Integer>();
     private FalseItems falseItems = new FalseItems();
     private String statFile = "stats_" + DateHelper.getDate() + ".txt";
 
     static enum StatusField {
+
         ID("id"),
         DOMAIN("domain"),
         TITLE("title"),
@@ -52,20 +56,15 @@ public class ContestLuceneRecommender implements ContestRecommender {
         URL("url"),
         RECOMMENDABLE("recommendable"),
         CREATED("created");
-
         public final String name;
 
         StatusField(String s) {
             name = s;
         }
-    }
-
-    ;
-
+    };
     FieldType textOptions;
     FieldType recOptions;
     FieldType numOptions;
-
 
     /**
      * main only used for debugging
@@ -110,7 +109,7 @@ public class ContestLuceneRecommender implements ContestRecommender {
             logger.error(e.toString());
         }
         try {
-            TermQuery idQuery = new TermQuery(new Term(StatusField.ID.name, "134690806"));
+            TermQuery idQuery = new TermQuery(new Term(StatusField.ID.name, "134791579"));
             TopDocs hits = is.search(idQuery, 10);
             for (ScoreDoc sd : hits.scoreDocs) {
                 Document hit = is.doc(sd.doc);
@@ -151,6 +150,7 @@ public class ContestLuceneRecommender implements ContestRecommender {
             initializeIndexes(file);
         }
         deserialize();
+        logger.error("this is not an error: init finished");
     }
 
     private void initializeIndexes(File file) {
@@ -162,11 +162,27 @@ public class ContestLuceneRecommender implements ContestRecommender {
         }
         while (scnr.hasNextLine()) {
             String line = scnr.nextLine();
-            JSONObject jObj = (JSONObject) JSONValue.parse(line.substring(0, line.length() - 24));
-            if (jObj.containsKey("msg") && !jObj.get("msg").toString().equals("impression") || !jObj.containsKey("item"))
-                continue;
-            addDocument(jObj);
+            line = line.substring(0, line.length() - 24);
+            JSONObject jObj = (JSONObject) JSONValue.parse(line);
+//            if (jObj.containsKey("msg") && !jObj.get("msg").toString().equals("impression") || !jObj.containsKey("item"))
+//                continue;
+//            addDocument(jObj);
+            if (jObj.containsKey("msg")) {
+                if (jObj.get("msg").toString().equals("impression")) {
+                    impression(line);
+                }
+                if (jObj.get("msg").toString().equals("feedback")) {
+                    feedback(line);
+                }
+            }
         }
+        pool.shutdown();
+        try {
+            pool.awaitTermination(10L, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            this.logger.error(e.toString());
+        }
+        pool = Executors.newFixedThreadPool(NUM_THREADS);
         deserialize();
     }
 
@@ -190,52 +206,55 @@ public class ContestLuceneRecommender implements ContestRecommender {
         doc.add(new LongField(StatusField.CREATED.name, created.longValue(), Field.Store.YES));
         doc.add(new Field(StatusField.RECOMMENDABLE.name, recommendable, recOptions));
 
-        if (!domainWriter.containsKey(domain)) {
-            try {
-                Analyzer analyzer = new GermanAnalyzer(Version.LUCENE_43);
-                IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, analyzer);
-                synchronized (this) {
+        // the whole block must be sync'ed, otherwise more than one thread 
+        // will try to create the index because they don't find the domain in the map
+        synchronized (this) {
+            if (!domainWriter.containsKey(domain)) {
+                try {
+                    Analyzer analyzer = new GermanAnalyzer(Version.LUCENE_43);
+                    IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, analyzer);
                     File indexDir = new File("./index_" + domain);
                     Directory index = FSDirectory.open(indexDir);
                     IndexWriter iw = new IndexWriter(index, config);
                     this.domainWriter.put(domain, iw);
-                }
-            } catch (IOException e) {
-                logger.error(e.getMessage());
-            }
-        }
-        IndexWriter iw = domainWriter.get(domain);
-        if (indexedDocs.containsKey(domain) && indexedDocs.get(domain).contains(itemID)) {
-            synchronized (this) {
-             try {
-                    iw.updateDocument(new Term(StatusField.ID.name, itemID), doc);
                 } catch (IOException e) {
                     logger.error(e.getMessage());
                 }
             }
-            return;
-        } else if (indexedDocs.containsKey(domain) && !indexedDocs.get(domain).contains(itemID)) {
-            indexedDocs.get(domain).add(itemID);
-        } else {
-            HashSet<String> tmpSet = new HashSet<String>();
-            tmpSet.add(itemID);
-            indexedDocs.put(domain, tmpSet);
         }
-        try {
-            synchronized (this) {
+        IndexWriter iw = null;
+        synchronized (this) {
+            iw = domainWriter.get(domain);
+            if (indexedDocs.containsKey(domain) && indexedDocs.get(domain).contains(itemID)) {
+                try {
+                    iw.updateDocument(new Term(StatusField.ID.name, itemID), doc);
+                } catch (IOException e) {
+                    logger.error(e.getMessage());
+                }
+                return;
+            } else if (indexedDocs.containsKey(domain) && !indexedDocs.get(domain).contains(itemID)) {
+                indexedDocs.get(domain).add(itemID);
+            } else {
+                HashSet<String> tmpSet = new HashSet<String>();
+                tmpSet.add(itemID);
+                indexedDocs.put(domain, tmpSet);
+            }
+        }
+        synchronized (this) {
+            try {
                 iw.addDocument(doc);
                 domainWriter.put(domain, iw);
+            } catch (IOException e) {
+                logger.error(e.getMessage());
+            } catch (NullPointerException e) {
+                logger.error(e.getMessage());
             }
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        } catch (NullPointerException e) {
-            logger.error(e.getMessage());
         }
     }
 
     @Override
     public List<ContestItem> recommend(String _client, String _item,
-                                       String _domain, String _description, String _limit) {
+            String _domain, String _description, String _limit) {
         final List<ContestItem> recList = new ArrayList<ContestItem>();
 
         JSONObject jObj = (JSONObject) JSONValue.parse(_description);
@@ -265,7 +284,10 @@ public class ContestLuceneRecommender implements ContestRecommender {
             }
             for (ScoreDoc sd : rs.scoreDocs) {
                 Document hit = is.doc(sd.doc);
-                recList.add(new ContestItem(Integer.parseInt(hit.get(StatusField.ID.name).toString())));
+                long item = Long.parseLong(hit.get(StatusField.ID.name).toString());
+                if (!falseItems.containsItem(item)) {
+                    recList.add(new ContestItem(item));
+                }
             }
             if (recList.size() < Integer.parseInt(_limit)) {
                 cq = new BooleanQuery();
@@ -297,7 +319,7 @@ public class ContestLuceneRecommender implements ContestRecommender {
         final boolean answer = Boolean.valueOf(((JSONObject) jObj.get("config")).get("recommend").toString()) || !jObj.containsKey("item");
 
         // write info directly in MAHOUT format
-        new Thread(new MahoutWriter(domain + "_m_data_" + DateHelper.getDate() + ".txt", _impression, 3)).start();
+//        new Thread(new MahoutWriter(domain + "_m_data_" + DateHelper.getDate() + ".txt", _impression, 3)).start();
 
         // update impression counter
         if (this.counter.containsKey(domain)) {
@@ -307,11 +329,11 @@ public class ContestLuceneRecommender implements ContestRecommender {
         }
         this.counter.put(domain, 0);
         if (jObj.containsKey("item")) {
-            new Thread() {
-        public void run() {
+            pool.submit(new Thread() {
+                public void run() {
                     addDocument(jObj);
                 }
-            }.start();
+            });
         }
     }
 
@@ -322,7 +344,7 @@ public class ContestLuceneRecommender implements ContestRecommender {
             final String client = ((JSONObject) jObj.get("client")).get("id").toString();
             final String item = ((JSONObject) jObj.get("target")).get("id").toString();
             // write info directly in MAHOUT format -> with pref 5
-            new Thread(new MahoutWriter("m_data_" + DateHelper.getDate() + ".txt", client + "," + item, 5)).start();
+//            new Thread(new MahoutWriter("m_data_" + DateHelper.getDate() + ".txt", client + "," + item, 5)).start();
 
             // write stats
             new StatsWriter(this.statFile, "feedback", "-1", item);
@@ -351,6 +373,7 @@ public class ContestLuceneRecommender implements ContestRecommender {
         }
         serialize(this.falseItems);
     }
+
     private void serialize(final FalseItems _falseItemse) {
         try {
             final FileOutputStream fileOut = new FileOutputStream("falseitems.ser");
@@ -379,6 +402,5 @@ public class ContestLuceneRecommender implements ContestRecommender {
     @Override
     public void setProperties(Properties properties) {
         // TODO Auto-generated method stub
-
     }
 }
