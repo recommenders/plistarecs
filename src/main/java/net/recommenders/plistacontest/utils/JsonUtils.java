@@ -24,7 +24,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("domain").getInt("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -34,7 +34,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("client").getInt("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -42,9 +42,9 @@ public class JsonUtils {
     public static Integer getContextCategoryId(String json) {
         try {
             final JSONObject jObj = getObject(json);
-            return jObj.getJSONObject("config").getJSONObject("category").getInt("id");
+            return jObj.getJSONObject("context").getJSONObject("category").getInt("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -54,7 +54,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("config").getJSONObject("team").getInt("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -70,7 +70,7 @@ public class JsonUtils {
             }
             return false;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -86,7 +86,7 @@ public class JsonUtils {
             }
             return false;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -97,7 +97,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getInt("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -115,7 +115,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getString("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -125,7 +125,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getString("title").replaceAll("\u00ad", "");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -135,7 +135,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getString("text").replaceAll("\u00ad", "");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -145,7 +145,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getString("url");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -155,7 +155,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getString("img");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -165,7 +165,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getInt("created");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -175,7 +175,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("item").getBoolean("recommendable");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -193,7 +193,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("config").getDouble("timeout");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -203,7 +203,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("config").getBoolean("recommend");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -213,7 +213,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("config").getInt("limit");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -232,7 +232,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("source").getString("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -242,7 +242,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("target").getString("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -270,7 +270,7 @@ public class JsonUtils {
             }
             return errorItems;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
@@ -284,7 +284,7 @@ public class JsonUtils {
             final JSONObject jObj = getObject(json);
             return jObj.getJSONObject("team").getInt("id");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return null;
         }
     }
