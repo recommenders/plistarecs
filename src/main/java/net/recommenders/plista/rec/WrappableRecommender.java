@@ -1,4 +1,4 @@
-package net.recommenders.plistacontest.recommender;
+package net.recommenders.plista.rec;
 
 import de.dailab.plistacontest.recommender.ContestItem;
 import de.dailab.plistacontest.recommender.ContestRecommender;

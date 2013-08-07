@@ -1,4 +1,4 @@
-package net.recommenders.plistacontest.recommender;
+package net.recommenders.plista.rec;
 
 import de.dailab.plistacontest.helper.DateHelper;
 import de.dailab.plistacontest.helper.FalseItems;
