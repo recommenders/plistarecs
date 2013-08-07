@@ -39,8 +39,11 @@ public class PathRecommender implements ContestRecommender {
     }
 
     public static void main(String[] args) {
-        PathRecommender pr = new PathRecommender();pr.init();
+        PathRecommender pr = new PathRecommender();
+        pr.init();
         String json = "{\"msg\":\"impression\",\"id\":69465,\"client\":{\"id\":3777},\"domain\":{\"id\":140},\"item\":{\"id\":90450,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/90450\",\"created\":1375713174,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":99}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"}";
+        System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
+        json = "{\"msg\":\"impression\",\"id\":38380,\"client\":{\"id\":6346},\"domain\":{\"id\":875},\"item\":{\"id\":17383,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/17383\",\"created\":1375864006,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":67}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"},2013-08-07 11:26:46,625";
         System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
     }
 
@@ -51,26 +54,28 @@ public class PathRecommender implements ContestRecommender {
         int domain = Integer.parseInt(_domain);
         long itemId = Long.parseLong(_item);
 
-        final WeightedItemList path = domainItemPath.get(domain).get(itemId);
         final Set<Long> recItems = new HashSet<Long>();
-        recItems.add(Long.parseLong(_item));
-        if (!path.isEmpty()) {
-            // sort the weighted list
-            Collections.sort(path);
-            // get the first N items (i.e., limit)
-            int n = 0; // recList index
-            int size = Math.min(limit, path.size());
-            int i = 0; // path index
-            while (n < size) {
-                WeightedItem wi = path.get(i);
-                long id = wi.getItemId();
-                i++;
-                if (forbiddenItems.contains(id) || itemId == id) {
-                    continue; // ignore this item
+        if (domainItemPath.containsKey(domain)) {
+            final WeightedItemList path = domainItemPath.get(domain).get(itemId);
+            recItems.add(itemId);
+            if (path != null && !path.isEmpty()) {
+                // sort the weighted list
+                Collections.sort(path);
+                // get the first N items (i.e., limit)
+                int n = 0; // recList index
+                int size = Math.min(limit, path.size());
+                int i = 0; // path index
+                while (n < size) {
+                    WeightedItem wi = path.get(i);
+                    long id = wi.getItemId();
+                    i++;
+                    if (forbiddenItems.contains(id) || itemId == id) {
+                        continue; // ignore this item
+                    }
+                    recList.add(new ContestItem(id));
+                    recItems.add(id);
+                    n++;
                 }
-                recList.add(new ContestItem(id));
-                recItems.add(id);
-                n++;
             }
         }
         completeList(recList, recItems, domainItemPath.get(domain), limit - recList.size(), forbiddenItems);
@@ -81,16 +86,18 @@ public class PathRecommender implements ContestRecommender {
 
     private static void completeList(List<ContestItem> recList, Set<Long> itemsAlreadyRecommended, Map<Long, WeightedItemList> domainItems, int howMany, Set<Long> forbiddenItems) {
         int n = 0;
-        for (WeightedItemList wil : domainItems.values()) {
-            for (WeightedItem wi : wil) {
-                if (n >= howMany) {
-                    break;
-                }
-                long id = wi.getItemId();
-                if (!forbiddenItems.contains(id) && !itemsAlreadyRecommended.contains(id)) {
-                    recList.add(new ContestItem(id));
-                    itemsAlreadyRecommended.add(id);
-                    n++;
+        if (domainItems != null) {
+            for (WeightedItemList wil : domainItems.values()) {
+                for (WeightedItem wi : wil) {
+                    if (n >= howMany) {
+                        break;
+                    }
+                    long id = wi.getItemId();
+                    if (!forbiddenItems.contains(id) && !itemsAlreadyRecommended.contains(id)) {
+                        recList.add(new ContestItem(id));
+                        itemsAlreadyRecommended.add(id);
+                        n++;
+                    }
                 }
             }
         }
