@@ -1,4 +1,4 @@
-package net.recommenders.plistacontest.recommender;
+package net.recommenders.plista.rec;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import de.dailab.plistacontest.helper.DataModelHelper;

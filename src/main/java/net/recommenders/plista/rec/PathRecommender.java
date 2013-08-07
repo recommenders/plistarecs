@@ -1,4 +1,4 @@
-package net.recommenders.plistacontest.recommender;
+package net.recommenders.plista.rec;
 
 import de.dailab.plistacontest.recommender.ContestItem;
 import de.dailab.plistacontest.recommender.ContestRecommender;
@@ -17,7 +17,7 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import net.recommenders.plistacontest.utils.JsonUtils;
+import net.recommenders.plista.utils.JsonUtils;
 
 /**
  *

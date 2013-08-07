@@ -1,4 +1,4 @@
-package net.recommenders.plistacontest.utils;
+package net.recommenders.plista.utils;
 
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
