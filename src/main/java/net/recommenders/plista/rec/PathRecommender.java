@@ -45,6 +45,17 @@ public class PathRecommender implements ContestRecommender {
         System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
         json = "{\"msg\":\"impression\",\"id\":38380,\"client\":{\"id\":6346},\"domain\":{\"id\":875},\"item\":{\"id\":17383,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/17383\",\"created\":1375864006,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":67}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"},2013-08-07 11:26:46,625";
         System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
+
+        WeightedItemList wil = new WeightedItemList();
+
+        wil.add(new WeightedItem("a", 1L, 2L));
+        wil.add(new WeightedItem("a", 1L, 6L));
+        wil.add(new WeightedItem("b", 2L, 4L));
+        wil.add(new WeightedItem("b", 2L, 5L));
+
+        Collections.sort(wil);
+
+        System.out.println(wil);
     }
 
     public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
@@ -247,9 +258,9 @@ public class PathRecommender implements ContestRecommender {
         }
 
         public int compareTo(WeightedItem t) {
-            int c = getFreq() - t.getFreq();
+            int c = -getFreq() + t.getFreq();
             if (c == 0) {
-                long diff = getTime() - t.getTime();
+                long diff = -getTime() + t.getTime();
                 c = (diff == 0L ? getItemId().compareTo(t.getItemId()) : (diff < 0L ? -1 : 1));
             }
             return c;
