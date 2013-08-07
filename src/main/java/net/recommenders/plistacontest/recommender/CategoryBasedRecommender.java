@@ -142,13 +142,14 @@ public class CategoryBasedRecommender implements ContestRecommender {
         Integer domainId = JsonUtils.getDomainIdFromImpression(_impression);
         String item = JsonUtils.getItemIdFromImpression(_impression);
         Integer category = JsonUtils.getContextCategoryIdFromImpression(_impression);
+        Boolean recommendable = JsonUtils.getItemRecommendableFromImpression(_impression);
 
         if ((domainId != null) && (item != null)) {
-            update(domainId, item, category);
+            update(domainId, item, category, recommendable);
         }
     }
 
-    private void update(int domainId, String item, Integer category) {
+    private void update(int domainId, String item, Integer category, Boolean recommendable) {
         Long itemId = Long.parseLong(item);
         if (category != null) {
             Map<Integer, Set<Long>> categoryItems = mapDomainCategoryItems.get(domainId);
@@ -172,6 +173,9 @@ public class CategoryBasedRecommender implements ContestRecommender {
         items.add(itemId);
         // all items
         allItems.add(itemId);
+        if (recommendable != null && !recommendable.booleanValue()) {
+            forbiddenItems.add(itemId);
+        }
     }
 
     public void feedback(String _feedback) {
@@ -181,10 +185,10 @@ public class CategoryBasedRecommender implements ContestRecommender {
         Integer category = JsonUtils.getContextCategoryIdFromFeedback(_feedback);
 
         if ((domainId != null) && (source != null)) {
-            update(domainId, source, category);
+            update(domainId, source, category, null);
         }
         if ((domainId != null) && (target != null) && (category != null)) {
-            update(domainId, target, category);
+            update(domainId, target, category, null);
         }
     }
 

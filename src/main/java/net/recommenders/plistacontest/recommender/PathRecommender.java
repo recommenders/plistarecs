@@ -131,17 +131,18 @@ public class PathRecommender implements ContestRecommender {
     public void impression(String _impression) {
         Integer domainId = JsonUtils.getDomainIdFromImpression(_impression);
         String item = JsonUtils.getItemIdFromImpression(_impression);
+        Boolean recommendable = JsonUtils.getItemRecommendableFromImpression(_impression);
 
         if ((domainId != null) && (item != null)) {
-            update(domainId, null, item);
+            update(domainId, null, item, recommendable);
         }
     }
 
-    private void update(int domainId, String source, String target) {
+    private void update(int domainId, String source, String target, Boolean recommendable) {
         Long item = Long.parseLong(target);
 
         if (source != null) {
-            update(domainId, null, source);
+            update(domainId, null, source, recommendable);
             Long id = Long.parseLong(source);
             synchronized (this) {
                 domainLastItem.put(domainId, id);
@@ -178,6 +179,9 @@ public class PathRecommender implements ContestRecommender {
             allItems.put(1L, all);
         }
         all.add(new WeightedItem(target, item, System.currentTimeMillis()));
+        if (recommendable != null && !recommendable.booleanValue()) {
+            forbiddenItems.add(item);
+        }
     }
 
     public void feedback(String _feedback) {
@@ -186,7 +190,7 @@ public class PathRecommender implements ContestRecommender {
         String target = JsonUtils.getTargetIdFromFeedback(_feedback);
 
         if ((domainId != null) && (source != null) && (target != null)) {
-            update(domainId, source, target);
+            update(domainId, source, target, null);
         }
     }
 
@@ -273,6 +277,7 @@ public class PathRecommender implements ContestRecommender {
         public boolean add(WeightedItem e) {
             if (!positions.containsKey(e.getItemId())) {
                 positions.put(e.getItemId(), curPos);
+                curPos++;
                 return super.add(e);
             } else {
                 WeightedItem ee = get(positions.get(e.getItemId()));
