@@ -145,20 +145,13 @@ public class PathRecommender implements ContestRecommender {
         Boolean recommendable = JsonUtils.getItemRecommendableFromImpression(_impression);
 
         if ((domainId != null) && (item != null)) {
-            update(domainId, null, item, recommendable);
+            update(domainId, item, recommendable, 1);
         }
     }
 
-    private void update(int domainId, String source, String target, Boolean recommendable) {
+    private void update(int domainId, String target, Boolean recommendable, int confidence) {
         Long item = Long.parseLong(target);
-
-        if (source != null) {
-            update(domainId, null, source, recommendable);
-            Long id = Long.parseLong(source);
-            synchronized (this) {
-                domainLastItem.put(domainId, id);
-            }
-        }
+        long curTime = System.currentTimeMillis();
 
         Long lastItem = null;
         synchronized (this) {
@@ -181,7 +174,7 @@ public class PathRecommender implements ContestRecommender {
                 toUpdate = new WeightedItemList();
                 domainItemPath.get(domainId).put(lastItem, toUpdate);
             }
-            toUpdate.add(new WeightedItem(target, item, System.currentTimeMillis()));
+            toUpdate.add(new WeightedItem(target, item, curTime), confidence);
         }
         // all items
         WeightedItemList all = allItems.get(1L);
@@ -189,7 +182,7 @@ public class PathRecommender implements ContestRecommender {
             all = new WeightedItemList();
             allItems.put(1L, all);
         }
-        all.add(new WeightedItem(target, item, System.currentTimeMillis()));
+        all.add(new WeightedItem(target, item, curTime), confidence);
         if (recommendable != null && !recommendable.booleanValue()) {
             forbiddenItems.add(item);
         }
@@ -200,8 +193,11 @@ public class PathRecommender implements ContestRecommender {
         String source = JsonUtils.getSourceIdFromFeedback(_feedback);
         String target = JsonUtils.getTargetIdFromFeedback(_feedback);
 
-        if ((domainId != null) && (source != null) && (target != null)) {
-            update(domainId, source, target, null);
+        if ((domainId != null) && (source != null)) {
+            update(domainId, source, null, 3);
+        }
+        if ((domainId != null) && (target != null)) {
+            update(domainId, target, null, 5);
         }
     }
 
@@ -230,7 +226,7 @@ public class PathRecommender implements ContestRecommender {
             this.item = item;
             this.itemId = itemId;
             this.time = time;
-            this.freq = 1;
+            this.freq = 0;
         }
 
         public String getItem() {
@@ -286,13 +282,18 @@ public class PathRecommender implements ContestRecommender {
 
         @Override
         public boolean add(WeightedItem e) {
+            return add(e, 1);
+        }
+
+        public boolean add(WeightedItem e, int w) {
             if (!positions.containsKey(e.getItemId())) {
                 positions.put(e.getItemId(), curPos);
+                e.setFreq(w + e.getFreq());
                 curPos++;
                 return super.add(e);
             } else {
                 WeightedItem ee = get(positions.get(e.getItemId()));
-                ee.setFreq(1 + ee.getFreq());
+                ee.setFreq(w + ee.getFreq());
                 ee.setTime(e.getTime());
                 return false;
             }

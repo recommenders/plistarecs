@@ -28,10 +28,10 @@ import net.recommenders.plista.utils.JsonUtils;
 public class PRCategoryBasedRecommender implements ContestRecommender {
 
     private static Logger logger = Logger.getLogger(PRCategoryBasedRecommender.class);
-    private Set<Long> forbiddenItems;
-    private PathRecommender.WeightedItemList allItems;
-    private Map<Integer, Map<Integer, PathRecommender.WeightedItemList>> mapDomainCategoryItems;
-    private Map<Integer, PathRecommender.WeightedItemList> mapDomainItems;
+    protected Set<Long> forbiddenItems;
+    protected PathRecommender.WeightedItemList allItems;
+    protected Map<Integer, Map<Integer, PathRecommender.WeightedItemList>> mapDomainCategoryItems;
+    protected Map<Integer, PathRecommender.WeightedItemList> mapDomainItems;
 
     public PRCategoryBasedRecommender() {
         mapDomainCategoryItems = new ConcurrentHashMap<Integer, Map<Integer, PathRecommender.WeightedItemList>>();
@@ -75,7 +75,6 @@ public class PRCategoryBasedRecommender implements ContestRecommender {
                     //
                     int n = 0;
                     int size = Math.min(limit, candidateItems.size());
-                    // TODO: improve this iteration using some popularity information or recency
                     for (PathRecommender.WeightedItem candidate : candidateItems) {
                         if (n >= size) {
                             break;
@@ -101,10 +100,9 @@ public class PRCategoryBasedRecommender implements ContestRecommender {
         return recList;
     }
 
-    private static void completeList(List<ContestItem> recList, Set<Long> itemsAlreadyRecommended, PathRecommender.WeightedItemList domainItems, int howMany, Set<Long> forbiddenItems) {
+    protected static void completeList(List<ContestItem> recList, Set<Long> itemsAlreadyRecommended, PathRecommender.WeightedItemList domainItems, int howMany, Set<Long> forbiddenItems) {
         int n = 0;
         if (domainItems != null) {
-            // TODO: improve this iteration using some popularity information or recency
             for (PathRecommender.WeightedItem item : domainItems) {
                 if (n >= howMany) {
                     break;
@@ -150,13 +148,13 @@ public class PRCategoryBasedRecommender implements ContestRecommender {
         Boolean recommendable = JsonUtils.getItemRecommendableFromImpression(_impression);
 
         if ((domainId != null) && (item != null)) {
-            update(domainId, item, category, recommendable);
+            update(domainId, item, category, recommendable, 1);
         }
     }
 
-    private void update(int domainId, String item, Integer category, Boolean recommendable) {
+    private void update(int domainId, String item, Integer category, Boolean recommendable, int confidence) {
         Long itemId = Long.parseLong(item);
-        PathRecommender.WeightedItem wi = new PathRecommender.WeightedItem(item, itemId, System.currentTimeMillis());
+        long curTime = System.currentTimeMillis();
         if (category != null) {
             Map<Integer, PathRecommender.WeightedItemList> categoryItems = mapDomainCategoryItems.get(domainId);
             if (categoryItems == null) {
@@ -168,7 +166,7 @@ public class PRCategoryBasedRecommender implements ContestRecommender {
                 items = new PathRecommender.WeightedItemList();
                 categoryItems.put(category, items);
             }
-            items.add(wi);
+            items.add(new PathRecommender.WeightedItem(item, itemId, curTime), confidence);
         }
         // without category constraint
         PathRecommender.WeightedItemList items = mapDomainItems.get(domainId);
@@ -176,9 +174,9 @@ public class PRCategoryBasedRecommender implements ContestRecommender {
             items = new PathRecommender.WeightedItemList();
             mapDomainItems.put(domainId, items);
         }
-        items.add(wi);
+        items.add(new PathRecommender.WeightedItem(item, itemId, curTime), confidence);
         // all items
-        allItems.add(wi);
+        allItems.add(new PathRecommender.WeightedItem(item, itemId, curTime), confidence);
         if (recommendable != null && !recommendable.booleanValue()) {
             forbiddenItems.add(itemId);
         }
@@ -191,10 +189,10 @@ public class PRCategoryBasedRecommender implements ContestRecommender {
         Integer category = JsonUtils.getContextCategoryIdFromFeedback(_feedback);
 
         if ((domainId != null) && (source != null)) {
-            update(domainId, source, category, null);
+            update(domainId, source, category, null, 3);
         }
-        if ((domainId != null) && (target != null) && (category != null)) {
-            update(domainId, target, category, null);
+        if ((domainId != null) && (target != null)) {
+            update(domainId, target, category, null, 5);
         }
     }
 
