@@ -46,9 +46,9 @@
             <version>${lucene.version}</version>
         </dependency>
         <dependency>
-            <groupId>de.dailab</groupId>
-            <artifactId>plistacontest</artifactId>
-            <version>0.0.1</version>
+            <groupId>net.recommenders</groupId>
+            <artifactId>plista</artifactId>
+            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.mahout</groupId>
@@ -69,11 +69,11 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>de.dailab.plistacontest.client.Client</mainClass>
+                    <mainClass>net.recommenders.plista.client.Client</mainClass>
                     <systemProperties>
                         <systemProperty>
-                            <key>plista.team</key>
-                            <value>${basedir}/${plista.teamid}.properties</value>
+                            <key>propertyFile</key>
+                            <value>${basedir}/${propertyFile}</value>
                         </systemProperty>
                     </systemProperties>
                 </configuration>

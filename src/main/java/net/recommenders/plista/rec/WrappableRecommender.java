@@ -1,51 +1,50 @@
 package net.recommenders.plista.rec;
 
-import de.dailab.plistacontest.recommender.ContestItem;
-import de.dailab.plistacontest.recommender.ContestRecommender;
 import java.util.*;
+import net.recommenders.plista.client.Message;
+import net.recommenders.plista.recommender.Recommender;
 
 /**
  *
  * @author alejandro
  */
-public class WrappableRecommender implements ContestRecommender, WrappableRecommenderIF {
+public class WrappableRecommender implements Recommender, WrappableRecommenderIF {
 
-    private ContestRecommender wrapped;
+    private Recommender wrapped;
     private int factor;
 
-    public WrappableRecommender(ContestRecommender wrapped) {
+    public WrappableRecommender(Recommender wrapped) {
         this(wrapped, 10);
     }
 
-    public WrappableRecommender(ContestRecommender wrapped, int factor) {
+    public WrappableRecommender(Recommender wrapped, int factor) {
         this.wrapped = wrapped;
         this.factor = factor;
     }
 
     @Override
-    public List<ContestItem> recommendAll(String _client, String _item,
-            String _domain, String _description, String _limit) {
-        return wrapped.recommend(_client, _item, _domain, _description, (factor * Integer.parseInt(_limit)) + "");
+    public List<Long> recommendAll(Message message, Integer limit) {
+        return wrapped.recommend(message, (factor * limit));
     }
 
-    public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
-        return wrapped.recommend(_client, _item, _domain, _description, _limit);
+    public List<Long> recommend(Message message, Integer limit) {
+        return wrapped.recommend(message, limit);
     }
 
     public void init() {
         wrapped.init();
     }
 
-    public void impression(String _impression) {
+    public void impression(Message _impression) {
         wrapped.impression(_impression);
     }
 
-    public void feedback(String _feedback) {
-        wrapped.feedback(_feedback);
+    public void click(Message _feedback) {
+        wrapped.click(_feedback);
     }
 
-    public void error(String _error) {
-        wrapped.error(_error);
+    public void update(Message _update) {
+        wrapped.update(_update);
     }
 
     public void setProperties(Properties properties) {
