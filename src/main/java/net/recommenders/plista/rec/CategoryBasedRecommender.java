@@ -1,39 +1,34 @@
 package net.recommenders.plista.rec;
 
-import de.dailab.plistacontest.recommender.ContestItem;
-import de.dailab.plistacontest.recommender.ContestRecommender;
-import java.io.File;
-import java.io.FileFilter;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.log4j.Logger;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.recommenders.plista.client.Message;
+import net.recommenders.plista.recommender.Recommender;
 import net.recommenders.plista.utils.JsonUtils;
 
 /**
  *
  * @author alejandr
  */
-public class CategoryBasedRecommender implements ContestRecommender {
+public class CategoryBasedRecommender implements Recommender {
 
     private static Logger logger = Logger.getLogger(CategoryBasedRecommender.class);
     private Set<Long> forbiddenItems;
     private Set<Long> allItems;
-    private Map<Integer, Map<Integer, Set<Long>>> mapDomainCategoryItems;
-    private Map<Integer, Set<Long>> mapDomainItems;
+    private Map<Long, Map<Long, Set<Long>>> mapDomainCategoryItems;
+    private Map<Long, Set<Long>> mapDomainItems;
 
     public CategoryBasedRecommender() {
-        mapDomainCategoryItems = new ConcurrentHashMap<Integer, Map<Integer, Set<Long>>>();
-        mapDomainItems = new ConcurrentHashMap<Integer, Set<Long>>();
+        mapDomainCategoryItems = new ConcurrentHashMap<Long, Map<Long, Set<Long>>>();
+        mapDomainItems = new ConcurrentHashMap<Long, Set<Long>>();
         forbiddenItems = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
         allItems = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
     }
@@ -50,21 +45,24 @@ public class CategoryBasedRecommender implements ContestRecommender {
         cbr.init();
         json = "{\"msg\":\"impression\",\"id\":22429,\"client\":{\"id\":7856},\"domain\":{\"id\":795},\"item\":{\"id\":92364,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/92364\",\"created\":1375711387,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":33}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"},2013-08-05 17:03:06,975";
         json = "{\"msg\":\"impression\",\"id\":69465,\"client\":{\"id\":3777},\"domain\":{\"id\":140},\"item\":{\"id\":90450,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/90450\",\"created\":1375713174,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":99}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"}";
-        System.out.println(cbr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
+//        System.out.println(cbr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
     }
 
-    public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
-//        logger.debug("recommend:" + _description);
-        final List<ContestItem> recList = new ArrayList<ContestItem>();
+    public List<Long> recommend(Message message, Integer limit) {
+        Long domain = message.getDomainID();
+        Long category = message.getItemCategory();
+        Long item = message.getItemID();
 
-        int limit = Integer.parseInt(_limit);
-        int domain = Integer.parseInt(_domain);
-        Integer category = JsonUtils.getContextCategoryIdFromImpression(_description);
+        return recommend(null, item, domain, category, limit);
+    }
+
+    public List<Long> recommend(Long user, Long item, Long domain, Long category, Integer limit) {
+        final List<Long> recList = new ArrayList<Long>();
 
         final Set<Long> recItems = new HashSet<Long>();
-        recItems.add(Long.parseLong(_item));
+        recItems.add(item);
         if (category != null) {
-            Map<Integer, Set<Long>> categoryItems = mapDomainCategoryItems.get(domain);
+            Map<Long, Set<Long>> categoryItems = mapDomainCategoryItems.get(domain);
             if (categoryItems != null) {
                 Set<Long> candidateItems = categoryItems.get(category);
                 if (candidateItems != null) {
@@ -75,10 +73,10 @@ public class CategoryBasedRecommender implements ContestRecommender {
                         if (n >= size) {
                             break;
                         }
-                        if (forbiddenItems.contains(candidate) || _item.equals(candidate.toString())) {
+                        if (forbiddenItems.contains(candidate) || item == candidate) {
                             continue; // ignore this item
                         }
-                        recList.add(new ContestItem(candidate));
+                        recList.add(candidate);
                         recItems.add(candidate);
                         n++;
                     }
@@ -96,7 +94,7 @@ public class CategoryBasedRecommender implements ContestRecommender {
         return recList;
     }
 
-    private static void completeList(List<ContestItem> recList, Set<Long> itemsAlreadyRecommended, Set<Long> domainItems, int howMany, Set<Long> forbiddenItems) {
+    private static void completeList(List<Long> recList, Set<Long> itemsAlreadyRecommended, Set<Long> domainItems, int howMany, Set<Long> forbiddenItems) {
         int n = 0;
         if (domainItems != null) {
             // TODO: improve this iteration using some popularity information or recency
@@ -105,7 +103,7 @@ public class CategoryBasedRecommender implements ContestRecommender {
                     break;
                 }
                 if (!forbiddenItems.contains(item) && !itemsAlreadyRecommended.contains(item)) {
-                    recList.add(new ContestItem(item));
+                    recList.add(item);
                     itemsAlreadyRecommended.add(item);
                     n++;
                 }
@@ -114,47 +112,24 @@ public class CategoryBasedRecommender implements ContestRecommender {
     }
 
     public void init() {
-        FileFilter logFilter = new WildcardFileFilter("contest.log*");
-        final File dir = new File(".");
-        File[] logs = dir.listFiles(logFilter);
-        for (File file : logs) {
-            Scanner scnr = null;
-            try {
-                scnr = new Scanner(file, "US-ASCII");
-            } catch (FileNotFoundException e) {
-                logger.error(e.getMessage());
-            }
-            while (scnr.hasNextLine()) {
-                String line = scnr.nextLine();
-                line = line.substring(0, line.length() - 24);
-                if (JsonUtils.isImpression(line)) {
-                    impression(line);
-                }
-                if (JsonUtils.isFeedback(line)) {
-                    feedback(line);
-                }
-            }
-        }
-        logger.debug("init finished");
     }
 
-    public void impression(String _impression) {
-        Integer domainId = JsonUtils.getDomainIdFromImpression(_impression);
-        String item = JsonUtils.getItemIdFromImpression(_impression);
-        Integer category = JsonUtils.getContextCategoryIdFromImpression(_impression);
-        Boolean recommendable = JsonUtils.getItemRecommendableFromImpression(_impression);
+    public void update(Message _update) {
+        Long domainId = _update.getDomainID();
+        Long item = _update.getItemID();
+        Long category = _update.getItemCategory();
+        Boolean recommendable = _update.getItemRecommendable();
 
         if ((domainId != null) && (item != null)) {
             update(domainId, item, category, recommendable);
         }
     }
 
-    private void update(int domainId, String item, Integer category, Boolean recommendable) {
-        Long itemId = Long.parseLong(item);
+    private void update(Long domainId, Long itemId, Long category, Boolean recommendable) {
         if (category != null) {
-            Map<Integer, Set<Long>> categoryItems = mapDomainCategoryItems.get(domainId);
+            Map<Long, Set<Long>> categoryItems = mapDomainCategoryItems.get(domainId);
             if (categoryItems == null) {
-                categoryItems = new ConcurrentHashMap<Integer, Set<Long>>();
+                categoryItems = new ConcurrentHashMap<Long, Set<Long>>();
                 mapDomainCategoryItems.put(domainId, categoryItems);
             }
             Set<Long> items = categoryItems.get(category);
@@ -178,11 +153,11 @@ public class CategoryBasedRecommender implements ContestRecommender {
         }
     }
 
-    public void feedback(String _feedback) {
-        Integer domainId = JsonUtils.getDomainIdFromFeedback(_feedback);
-        String source = JsonUtils.getSourceIdFromFeedback(_feedback);
-        String target = JsonUtils.getTargetIdFromFeedback(_feedback);
-        Integer category = JsonUtils.getContextCategoryIdFromFeedback(_feedback);
+    public void click(Message _click) {
+        Long domainId = _click.getDomainID();
+        Long source = _click.getItemSourceID();
+        Long target = _click.getItemID();
+        Long category = _click.getItemCategory();
 
         if ((domainId != null) && (source != null)) {
             update(domainId, source, category, null);
@@ -192,17 +167,10 @@ public class CategoryBasedRecommender implements ContestRecommender {
         }
     }
 
-    public void error(String _error) {
-        logger.error(_error);
-        String[] invalidItems = JsonUtils.getInvalidItemsFromError(_error);
-        if (invalidItems != null) {
-            // since domain is optional, we cannot store the forbidden items per domain
-            for (String item : invalidItems) {
-                forbiddenItems.add(Long.parseLong(item));
-            }
-        }
+    public void setProperties(Properties properties) {
     }
 
-    public void setProperties(Properties properties) {
+    public void impression(Message _impression) {
+        update(_impression);
     }
 }
