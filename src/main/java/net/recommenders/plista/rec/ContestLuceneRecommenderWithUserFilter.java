@@ -1,40 +1,40 @@
 package net.recommenders.plista.rec;
 
-import de.dailab.plistacontest.recommender.ContestItem;
-import de.dailab.plistacontest.recommender.ContestRecommender;
 import java.util.List;
 import java.util.Properties;
+import net.recommenders.plista.client.Message;
+import net.recommenders.plista.recommender.Recommender;
 
 /**
  *
  * @author alejandr
  */
-public class ContestLuceneRecommenderWithUserFilter implements ContestRecommender {
+public class ContestLuceneRecommenderWithUserFilter implements Recommender {
 
-    private ContestRecommender wrapped;
+    private Recommender wrapped;
 
     public ContestLuceneRecommenderWithUserFilter() {
         this.wrapped = new UserFilterWrapper(new WrappableRecommender(new ContestLuceneRecommender()));
     }
 
-    public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
-        return wrapped.recommend(_client, _item, _domain, _description, _limit);
+    public List<Long> recommend(Message input, Integer limit) {
+        return wrapped.recommend(input, limit);
     }
 
     public void init() {
         wrapped.init();
     }
 
-    public void impression(String _impression) {
+    public void impression(Message _impression) {
         wrapped.impression(_impression);
     }
 
-    public void feedback(String _feedback) {
-        wrapped.feedback(_feedback);
+    public void click(Message _feedback) {
+        wrapped.click(_feedback);
     }
 
-    public void error(String _error) {
-        wrapped.error(_error);
+    public void update(Message _update) {
+        wrapped.update(_update);
     }
 
     public void setProperties(Properties properties) {

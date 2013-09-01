@@ -1,12 +1,6 @@
 package net.recommenders.plista.rec;
 
-import de.dailab.plistacontest.recommender.ContestItem;
-import de.dailab.plistacontest.recommender.ContestRecommender;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.log4j.Logger;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,26 +8,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import net.recommenders.plista.utils.JsonUtils;
+import net.recommenders.plista.client.Message;
+import net.recommenders.plista.recommender.Recommender;
 
 /**
  *
  * @author alejandr
  */
-public class PathRecommender implements ContestRecommender {
+public class PathRecommender implements Recommender {
 
     private static final Logger logger = Logger.getLogger(PathRecommender.class);
-    private Map<Integer, Long> domainLastItem;
-    private Map<Integer, Map<Long, WeightedItemList>> domainItemPath;
+    private Map<Long, Long> domainLastItem;
+    private Map<Long, Map<Long, WeightedItemList>> domainItemPath;
     private Set<Long> forbiddenItems;
     private Map<Long, WeightedItemList> allItems;
 
     public PathRecommender() {
-        domainLastItem = new ConcurrentHashMap<Integer, Long>();
-        domainItemPath = new ConcurrentHashMap<Integer, Map<Long, WeightedItemList>>();
+        domainLastItem = new ConcurrentHashMap<Long, Long>();
+        domainItemPath = new ConcurrentHashMap<Long, Map<Long, WeightedItemList>>();
         forbiddenItems = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
         allItems = new ConcurrentHashMap<Long, WeightedItemList>();
     }
@@ -42,28 +36,27 @@ public class PathRecommender implements ContestRecommender {
         PathRecommender pr = new PathRecommender();
         pr.init();
         String json = "{\"msg\":\"impression\",\"id\":69465,\"client\":{\"id\":3777},\"domain\":{\"id\":140},\"item\":{\"id\":90450,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/90450\",\"created\":1375713174,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":99}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"}";
-        System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
+//        System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
         json = "{\"msg\":\"impression\",\"id\":38380,\"client\":{\"id\":6346},\"domain\":{\"id\":875},\"item\":{\"id\":17383,\"title\":\"Nothing but a test\",\"url\":\"http:\\/\\/www.example.com\\/articles\\/17383\",\"created\":1375864006,\"text\":\"Still nothing but a <strong>test<\\/strong>.\",\"img\":null,\"recommendable\":true},\"context\":{\"category\":{\"id\":67}},\"config\":{\"timeout\":1,\"recommend\":true,\"limit\":4},\"version\":\"1.0\"},2013-08-07 11:26:46,625";
-        System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
+//        System.out.println(pr.recommend("" + JsonUtils.getClientId(json), JsonUtils.getItemIdFromImpression(json), "" + JsonUtils.getDomainId(json), json, "" + JsonUtils.getConfigLimitFromImpression(json)));
 
         WeightedItemList wil = new WeightedItemList();
 
-        wil.add(new WeightedItem("a", 1L, 2L));
-        wil.add(new WeightedItem("a", 1L, 6L));
-        wil.add(new WeightedItem("b", 2L, 4L));
-        wil.add(new WeightedItem("b", 2L, 5L));
+        wil.add(new WeightedItem(1L, 2L));
+        wil.add(new WeightedItem(1L, 6L));
+        wil.add(new WeightedItem(2L, 4L));
+        wil.add(new WeightedItem(2L, 5L));
 
         Collections.sort(wil);
 
         System.out.println(wil);
     }
 
-    public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
-        final List<ContestItem> recList = new ArrayList<ContestItem>();
+    public List<Long> recommend(Message input, Integer limit) {
+        final List<Long> recList = new ArrayList<Long>();
 
-        int limit = Integer.parseInt(_limit);
-        int domain = Integer.parseInt(_domain);
-        long itemId = Long.parseLong(_item);
+        Long domain = input.getDomainID();
+        Long itemId = input.getItemID();
 
         final Set<Long> recItems = new HashSet<Long>();
         if (domainItemPath.containsKey(domain)) {
@@ -83,7 +76,7 @@ public class PathRecommender implements ContestRecommender {
                     if (forbiddenItems.contains(id) || itemId == id) {
                         continue; // ignore this item
                     }
-                    recList.add(new ContestItem(id));
+                    recList.add(id);
                     recItems.add(id);
                     n++;
                 }
@@ -95,7 +88,7 @@ public class PathRecommender implements ContestRecommender {
         return recList;
     }
 
-    private static void completeList(List<ContestItem> recList, Set<Long> itemsAlreadyRecommended, Map<Long, WeightedItemList> domainItems, int howMany, Set<Long> forbiddenItems) {
+    private static void completeList(List<Long> recList, Set<Long> itemsAlreadyRecommended, Map<Long, WeightedItemList> domainItems, int howMany, Set<Long> forbiddenItems) {
         int n = 0;
         if (domainItems != null) {
             for (WeightedItemList wil : domainItems.values()) {
@@ -105,7 +98,7 @@ public class PathRecommender implements ContestRecommender {
                     }
                     long id = wi.getItemId();
                     if (!forbiddenItems.contains(id) && !itemsAlreadyRecommended.contains(id)) {
-                        recList.add(new ContestItem(id));
+                        recList.add(id);
                         itemsAlreadyRecommended.add(id);
                         n++;
                     }
@@ -115,42 +108,23 @@ public class PathRecommender implements ContestRecommender {
     }
 
     public void init() {
-        FileFilter logFilter = new WildcardFileFilter("contest.log*");
-        final File dir = new File(".");
-        File[] logs = dir.listFiles(logFilter);
-        for (File file : logs) {
-            Scanner scnr = null;
-            try {
-                scnr = new Scanner(file, "US-ASCII");
-            } catch (FileNotFoundException e) {
-                logger.error(e.getMessage());
-            }
-            while (scnr.hasNextLine()) {
-                String line = scnr.nextLine();
-                line = line.substring(0, line.length() - 24);
-                if (JsonUtils.isImpression(line)) {
-                    impression(line);
-                }
-                if (JsonUtils.isFeedback(line)) {
-                    feedback(line);
-                }
-            }
-        }
-        logger.debug("init finished");
     }
 
-    public void impression(String _impression) {
-        Integer domainId = JsonUtils.getDomainIdFromImpression(_impression);
-        String item = JsonUtils.getItemIdFromImpression(_impression);
-        Boolean recommendable = JsonUtils.getItemRecommendableFromImpression(_impression);
+    public void impression(Message _impression) {
+        update(_impression);
+    }
+
+    public void update(Message _update) {
+        Long domainId = _update.getDomainID();
+        Long item = _update.getItemID();
+        Boolean recommendable = _update.getItemRecommendable();
 
         if ((domainId != null) && (item != null)) {
             update(domainId, item, recommendable, 1);
         }
     }
 
-    private void update(int domainId, String target, Boolean recommendable, int confidence) {
-        Long item = Long.parseLong(target);
+    private void update(Long domainId, Long item, Boolean recommendable, int confidence) {
         long curTime = System.currentTimeMillis();
 
         Long lastItem = null;
@@ -174,7 +148,7 @@ public class PathRecommender implements ContestRecommender {
                 toUpdate = new WeightedItemList();
                 domainItemPath.get(domainId).put(lastItem, toUpdate);
             }
-            toUpdate.add(new WeightedItem(target, item, curTime), confidence);
+            toUpdate.add(new WeightedItem(item, curTime), confidence);
         }
         // all items
         WeightedItemList all = allItems.get(1L);
@@ -182,16 +156,16 @@ public class PathRecommender implements ContestRecommender {
             all = new WeightedItemList();
             allItems.put(1L, all);
         }
-        all.add(new WeightedItem(target, item, curTime), confidence);
+        all.add(new WeightedItem(item, curTime), confidence);
         if (recommendable != null && !recommendable.booleanValue()) {
             forbiddenItems.add(item);
         }
     }
 
-    public void feedback(String _feedback) {
-        Integer domainId = JsonUtils.getDomainIdFromFeedback(_feedback);
-        String source = JsonUtils.getSourceIdFromFeedback(_feedback);
-        String target = JsonUtils.getTargetIdFromFeedback(_feedback);
+    public void click(Message input) {
+        Long domainId = input.getDomainID();
+        Long source = input.getItemSourceID();
+        Long target = input.getItemID();
 
         if ((domainId != null) && (source != null)) {
             update(domainId, source, null, 3);
@@ -201,36 +175,19 @@ public class PathRecommender implements ContestRecommender {
         }
     }
 
-    public void error(String _error) {
-        logger.error(_error);
-        String[] invalidItems = JsonUtils.getInvalidItemsFromError(_error);
-        if (invalidItems != null) {
-            // since domain is optional, we cannot store the forbidden items per domain
-            for (String item : invalidItems) {
-                forbiddenItems.add(Long.parseLong(item));
-            }
-        }
-    }
-
     public void setProperties(Properties properties) {
     }
 
     public static class WeightedItem implements Serializable, Comparable<WeightedItem> {
 
-        private String item;
-        private long itemId;
+        private Long itemId;
         private long time;
         private int freq;
 
-        public WeightedItem(String item, long itemId, long time) {
-            this.item = item;
+        public WeightedItem(Long itemId, long time) {
             this.itemId = itemId;
             this.time = time;
             this.freq = 0;
-        }
-
-        public String getItem() {
-            return item;
         }
 
         public Long getItemId() {
@@ -264,7 +221,7 @@ public class PathRecommender implements ContestRecommender {
 
         @Override
         public String toString() {
-            return "[" + item + "," + time + "," + freq + "]";
+            return "[" + itemId + "," + time + "," + freq + "]";
         }
     }
 

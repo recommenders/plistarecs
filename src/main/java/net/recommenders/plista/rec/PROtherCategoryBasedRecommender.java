@@ -1,25 +1,23 @@
 package net.recommenders.plista.rec;
 
-import de.dailab.plistacontest.recommender.ContestItem;
-import de.dailab.plistacontest.recommender.ContestRecommender;
 import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.recommenders.plista.utils.JsonUtils;
+import net.recommenders.plista.client.Message;
+import net.recommenders.plista.recommender.Recommender;
 
 /**
  *
- * CategoryBased recommender with popularity and recency information.
- * It recommends items in a different category as the target item.
+ * CategoryBased recommender with popularity and recency information. It
+ * recommends items in a different category as the target item.
  *
  * @author alejandr
  */
-public class PROtherCategoryBasedRecommender extends PRCategoryBasedRecommender implements ContestRecommender {
+public class PROtherCategoryBasedRecommender extends PRCategoryBasedRecommender implements Recommender {
 
     private static Logger logger = Logger.getLogger(PROtherCategoryBasedRecommender.class);
 
@@ -28,21 +26,21 @@ public class PROtherCategoryBasedRecommender extends PRCategoryBasedRecommender 
     }
 
     @Override
-    public List<ContestItem> recommend(String _client, String _item, String _domain, String _description, String _limit) {
-        final List<ContestItem> recList = new ArrayList<ContestItem>();
+    public List<Long> recommend(Message input, Integer limit) {
+        final List<Long> recList = new ArrayList<Long>();
 
-        int limit = Integer.parseInt(_limit);
-        int domain = Integer.parseInt(_domain);
-        Integer category = JsonUtils.getContextCategoryIdFromImpression(_description);
+        Long domain = input.getDomainID();
+        Long category = input.getItemCategory();
+        Long item = input.getItemID();
 
         final Set<Long> recItems = new HashSet<Long>();
-        recItems.add(Long.parseLong(_item));
+        recItems.add(item);
         if (category != null) {
-            Map<Integer, PathRecommender.WeightedItemList> categoryItems = mapDomainCategoryItems.get(domain);
+            Map<Long, PathRecommender.WeightedItemList> categoryItems = mapDomainCategoryItems.get(domain);
             if (categoryItems != null) {
                 // create a list with all the items not in this category
                 PathRecommender.WeightedItemList candidateItems = new PathRecommender.WeightedItemList();
-                for (Integer cat : categoryItems.keySet()) {
+                for (Long cat : categoryItems.keySet()) {
                     if (cat.equals(category)) {
                         continue;
                     }
@@ -60,10 +58,10 @@ public class PROtherCategoryBasedRecommender extends PRCategoryBasedRecommender 
                         if (n >= size) {
                             break;
                         }
-                        if (forbiddenItems.contains(candidate.getItemId()) || _item.equals(candidate.getItem().toString())) {
+                        if (forbiddenItems.contains(candidate.getItemId()) || item == candidate.getItemId()) {
                             continue; // ignore this item
                         }
-                        recList.add(new ContestItem(candidate.getItemId()));
+                        recList.add(candidate.getItemId());
                         recItems.add(candidate.getItemId());
                         n++;
                     }
