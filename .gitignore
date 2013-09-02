@@ -6,4 +6,15 @@ contest.log
 
 *.log
 
+*.class
+
+.DS_Store
+.DS_Store?
+
+.iml
+.iml/
+
+.idea
+.idea/
+
 *.2013-08-01
