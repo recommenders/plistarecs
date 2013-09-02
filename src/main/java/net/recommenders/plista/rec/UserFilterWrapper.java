@@ -1,18 +1,12 @@
 package net.recommenders.plista.rec;
 
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.mahout.cf.taste.model.DataModel;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Set;
+import java.util.TreeSet;
 import net.recommenders.plista.client.Message;
 import net.recommenders.plista.recommender.Recommender;
 import org.apache.log4j.Logger;
@@ -26,58 +20,20 @@ import org.apache.log4j.Logger;
 public class UserFilterWrapper implements Recommender {
 
     private static final Logger logger = Logger.getLogger(UserFilterWrapper.class);
-    private static final long UPDATE_TIME = 10L * 60 * 1000; // 10 minutes
-    private static final int NUM_THREADS = 5;
     private WrappableRecommenderIF rec;
-    // number of days taken into account for the data model
-    private int numberOfDays;
-    private Map<Long, DataModel> domainModels;
-    private long lastUpdate;
-    private ExecutorService pool;
+    private Map<Long, InteractionModel> domainModels;
 
     public UserFilterWrapper(WrappableRecommenderIF rec) {
         this.rec = rec;
 
-        this.pool = Executors.newFixedThreadPool(NUM_THREADS);
-
-        this.numberOfDays = Integer.parseInt(System.getProperty("plista.numOfDays", "5"));
-
-        this.domainModels = new HashMap<Long, DataModel>();
-        this.lastUpdate = System.currentTimeMillis();
-
-        // get all data files for the different domains
-        final File dir = new File(".");
-        final FileFilter fileFilter = new WildcardFileFilter("*_m_data*.txt");
-        final File[] files = dir.listFiles(fileFilter);
-
-        // get domains
-        List<Long> domains = new ArrayList<Long>();
-        for (int i = 0; i < files.length; i++) {
-            final String domainFile = files[i].getName();
-            final Long domain = Long.parseLong(domainFile.substring(0, domainFile.indexOf("_")));
-            if (!domains.contains(domain)) {
-                domains.add(domain);
-            }
-        }
-
-        // create domain MP Recommender
-        for (Long d : domains) {
-            try {
-                getDataModel(d);
-            } catch (Exception e) {
-                this.logger.warn(e.toString());
-            }
-        }
+        this.domainModels = new HashMap<Long, InteractionModel>();
     }
 
-    private DataModel getDataModel(Long _domain) throws IOException {
-        long curTime = System.currentTimeMillis();
-        DataModel model = domainModels.get(_domain);
-        if ((model == null) || (curTime - lastUpdate > UPDATE_TIME)) {
-            // TODO
-//            model = DataModelHelper.getDataModel(this.numberOfDays, _domain);
-            domainModels.put(_domain, model);
-            lastUpdate = curTime;
+    private InteractionModel getModel(Long domain) {
+        InteractionModel model = domainModels.get(domain);
+        if (model == null) {
+            model = new SimpleInteractionModel();
+            domainModels.put(domain, model);
         }
         return model;
     }
@@ -86,20 +42,15 @@ public class UserFilterWrapper implements Recommender {
         List<Long> allItems = rec.recommendAll(message, limit);
         List<Long> filteredItems = new ArrayList<Long>();
         // DataModelHelper.getDataModel(this.numberOfDays, d)
-        long userID = message.getUserID();
-        FastIDSet idSet = new FastIDSet();
-        try {
-            idSet = getDataModel(message.getDomainID()).getItemIDsFromUser(userID);
-        } catch (org.apache.mahout.cf.taste.common.NoSuchUserException e1) {
-            this.logger.debug(e1.toString());
-        } catch (Exception e2) {
-            this.logger.warn(e2.toString());
-        }
+        Long userID = message.getUserID();
+        Long domain = message.getDomainID();
 
+        InteractionModel model = getModel(domain);
+        Set<Long> alreadyObservedItems = model.getInteractions(userID);
         int n = 0;
         for (Long i : allItems) {
             // check items by the user
-            if (!idSet.contains(i)) {
+            if (!alreadyObservedItems.contains(i)) {
                 filteredItems.add(i);
                 n++;
                 if (n >= limit) {
@@ -116,9 +67,10 @@ public class UserFilterWrapper implements Recommender {
 
     public void impression(Message _impression) {
         final Long domain = _impression.getDomainID();
-        // write info directly in MAHOUT format
-        // TODO
-//        pool.submit(new Thread(new MahoutWriter(domain + "_m_data_" + DateHelper.getDate() + ".txt", _impression, 3)));
+        final Long client = _impression.getUserID();
+        final Long item = _impression.getItemID();
+
+        getModel(domain).addImpression(client, item);
 
         rec.impression(_impression);
     }
@@ -126,9 +78,9 @@ public class UserFilterWrapper implements Recommender {
     public void click(Message _feedback) {
         final Long client = _feedback.getUserID();
         final Long item = _feedback.getItemID();
-        // write info directly in MAHOUT format -> with pref 5
-        // TODO
-//        pool.submit(new Thread(new MahoutWriter("m_data_" + DateHelper.getDate() + ".txt", client + "," + item, 5)));
+        final Long domain = _feedback.getDomainID();
+
+        getModel(domain).addClick(client, item);
 
         rec.click(_feedback);
     }
@@ -139,5 +91,50 @@ public class UserFilterWrapper implements Recommender {
 
     public void update(Message _update) {
         rec.update(_update);
+    }
+
+    public static interface InteractionModel {
+
+        public void addClick(Long user, Long item);
+
+        public void addImpression(Long user, Long item);
+
+        public Set<Long> getInteractions(Long user);
+    }
+
+    public static class SimpleInteractionModel implements InteractionModel {
+
+        private Map<Long, Set<Long>> model;
+
+        public SimpleInteractionModel() {
+            model = new HashMap<Long, Set<Long>>();
+        }
+
+        private void add(Long user, Long item) {
+            if (user == null || item == null) {
+                return;
+            }
+            Set<Long> items = model.get(user);
+            if (items == null) {
+                items = new TreeSet<Long>();
+                model.put(user, items);
+            }
+            items.add(item);
+        }
+
+        public void addClick(Long user, Long item) {
+            add(user, item);
+        }
+
+        public void addImpression(Long user, Long item) {
+            add(user, item);
+        }
+
+        public Set<Long> getInteractions(Long user) {
+            if (user == null || !model.containsKey(user)) {
+                return new TreeSet<Long>();
+            }
+            return model.get(user);
+        }
     }
 }

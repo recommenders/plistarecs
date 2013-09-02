@@ -1,1 +1,1 @@
-mvn exec:java -Dplista.teamid=TEAMID
+mvn exec:java -DpropertyFile=plista.properties
