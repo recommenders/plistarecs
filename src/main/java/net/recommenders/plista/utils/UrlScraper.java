@@ -104,6 +104,8 @@ public class UrlScraper {
         String content = null;
         String url = message.getItemURL();
         Document doc = null;
+        if(db.itemExists(itemID))
+            return;
         try{
             Thread.sleep(1000);
             doc = Jsoup.connect(url).timeout(10000).get();
@@ -112,7 +114,7 @@ public class UrlScraper {
             e.printStackTrace();
         }
         try{
-        content = doc.select(identifiers.get(domainID)).first().text();
+            content = doc.select(identifiers.get(domainID)).first().text();
         } catch (NullPointerException e){
             logger.error(e.getMessage());
             System.out.println("ERROR: domain identifier not available or wrong. DOMAIN: " + domainID );

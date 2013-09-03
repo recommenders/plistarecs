@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.sql.*;
+import java.util.HashSet;
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,6 +20,8 @@ public class ContentDB {
     private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
     private static Connection con;
     String dbFileName = "content.db";
+    private HashSet<Long> items;
+
 
 
     public void init() {
@@ -49,34 +52,39 @@ public class ContentDB {
         }
     }
 
+    public ContentDB(){
+        items = new HashSet<Long>();
+    }
+
     public boolean addMessage(Message message, String content){
         boolean result = false;
         Long itemID = message.getItemID();
         Long domainID = message.getDomainID();
         String title = message.getItemTitle();
         String text = message.getItemText();
+        if(items.contains(itemID))
+            return true;
+        else
+            items.add(itemID);
         try{
-
             Statement stat = con.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT * FROM messages WHERE id = '" + itemID + "'");
-            if(!rs.next()){
-                PreparedStatement prep = con
-                        .prepareStatement("INSERT INTO messages VALUES(?,?,?,?,?);");
-                prep.setString(1, itemID.toString());
-                prep.setString(2, domainID.toString());
-                prep.setString(3, title);
-                prep.setString(4, text);
-                prep.setString(5, content);
-                prep.execute();
-                prep.close();
-                result = true;
-            }
+            PreparedStatement prep = con
+                    .prepareStatement("INSERT INTO messages VALUES(?,?,?,?,?);");
+            prep.setString(1, itemID.toString());
+            prep.setString(2, domainID.toString());
+            prep.setString(3, title);
+            prep.setString(4, text);
+            prep.setString(5, content);
+            prep.execute();
+            prep.close();
+            result = true;
             stat.close();
         }catch(SQLException e){
             logger.error(e.getMessage());
         }
         return result;
     }
+
 
     public  String getContent(Long itemID, Long domainID){
         String result = null;
@@ -97,6 +105,8 @@ public class ContentDB {
         con.close();
     }
 
-
+    public boolean itemExists(Long itemID){
+        return items.contains(itemID);
+    }
 
 }
