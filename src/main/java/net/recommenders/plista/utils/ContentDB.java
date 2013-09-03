@@ -1,5 +1,6 @@
 package net.recommenders.plista.utils;
 
+import net.recommenders.plista.client.ChallengeMessage;
 import net.recommenders.plista.client.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +87,7 @@ public class ContentDB {
     }
 
 
-    public  String getContent(Long itemID, Long domainID){
+    public String getContent(Long itemID, Long domainID){
         String result = null;
         try{
             Statement stat = con.createStatement();
@@ -99,6 +100,26 @@ public class ContentDB {
             logger.error(e.getMessage());
         }
         return result;
+    }
+
+    public Message getMessage(Long itemID, Long domainID){
+        ChallengeMessage message = null;
+        try{
+            Statement stat = con.createStatement();
+            ResultSet res = stat.executeQuery("SELECT * FROM messages where domain = '"+domainID
+                    +"' and id = '"+ itemID+"'");
+            while (res.next()){
+                message = new ChallengeMessage();
+                message.setItemID(itemID);
+                message.setDomainID(domainID);
+                message.setItemText(res.getString("text"));
+                message.setItemTitle(res.getString("title"));
+            }
+            stat.close();
+        }catch (SQLException e){
+            logger.error(e.getMessage());
+        }
+        return message;
     }
 
     public void disconnect() throws  SQLException{

@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import net.recommenders.plista.utils.ContentDB;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.de.GermanAnalyzer;
@@ -56,11 +58,8 @@ public class ContestLuceneRecommender implements Recommender {
     private static final int NUM_THREADS = 5;
     private ExecutorService pool = Executors.newFixedThreadPool(NUM_THREADS);
     public static final Analyzer ANALYZER = new GermanAnalyzer(Version.LUCENE_43);
-    //no of days old articles to recommend
     private static final int days = 3;
-//    final Map<Long, Integer> counter = new HashMap<Long, Integer>();
-//    private FalseItems falseItems = new FalseItems();
-//    private String statFile = "stats_" + DateHelper.getDate() + ".txt";
+    ContentDB contendDB = new ContentDB();
 
     static enum StatusField {
 
@@ -155,6 +154,10 @@ public class ContestLuceneRecommender implements Recommender {
         numOptions = new FieldType();
         numOptions.setIndexed(true);
         numOptions.setStored(true);
+
+        contendDB.init();
+
+
     }
 
     private void addDocument(final Message _doc) {
@@ -166,6 +169,8 @@ public class ContestLuceneRecommender implements Recommender {
         Boolean recommendable = _doc.getItemRecommendable();
         Long created = _doc.getItemCreated();
 
+        if(!contendDB.itemExists(itemID))
+            contendDB.addMessage(_doc, "");
         Document doc = new Document();
         doc.add(new LongField(StatusField.DOMAIN.name, domain, Field.Store.YES));
         doc.add(new Field(StatusField.ID.name, "" + itemID, numOptions));
@@ -228,11 +233,16 @@ public class ContestLuceneRecommender implements Recommender {
 
         Long itemID = input.getItemID();
         Long domain = input.getDomainID();
+        String title = "";
+        String text = "";
+        Message message = contendDB.getMessage(itemID, domain);
+        if (message == null)
+            return null;
         ////////////////////////////////////////
         // TODO: now the item information is not included in the recommendation request!!!
         ////////////////////////////////////////
-        String title = null;
-        String text = null;
+        title = message.getItemTitle();
+        text = message.getItemText();
 
         Query idQuery = new TermQuery(new Term(StatusField.ID.name, "" + itemID));
         QueryParser p = new QueryParser(Version.LUCENE_43, StatusField.TEXTTITLE.name, ANALYZER);
