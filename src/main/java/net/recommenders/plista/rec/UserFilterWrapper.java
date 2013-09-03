@@ -1,12 +1,13 @@
 package net.recommenders.plista.rec;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import net.recommenders.plista.client.Message;
 import net.recommenders.plista.recommender.Recommender;
 import org.apache.log4j.Logger;
@@ -26,10 +27,14 @@ public class UserFilterWrapper implements Recommender {
     public UserFilterWrapper(WrappableRecommenderIF rec) {
         this.rec = rec;
 
-        this.domainModels = new HashMap<Long, InteractionModel>();
+        this.domainModels = new ConcurrentHashMap<Long, InteractionModel>();
     }
 
     private InteractionModel getModel(Long domain) {
+        if (domain == null) {
+            System.err.println("domain null");
+            return null;
+        }
         InteractionModel model = domainModels.get(domain);
         if (model == null) {
             model = new SimpleInteractionModel();
@@ -107,7 +112,7 @@ public class UserFilterWrapper implements Recommender {
         private Map<Long, Set<Long>> model;
 
         public SimpleInteractionModel() {
-            model = new HashMap<Long, Set<Long>>();
+            model = new ConcurrentHashMap<Long, Set<Long>>();
         }
 
         private void add(Long user, Long item) {
@@ -116,7 +121,7 @@ public class UserFilterWrapper implements Recommender {
             }
             Set<Long> items = model.get(user);
             if (items == null) {
-                items = new TreeSet<Long>();
+                items = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
                 model.put(user, items);
             }
             items.add(item);

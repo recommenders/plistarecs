@@ -1,1 +1,1 @@
-mvn exec:java -DpropertyFile=plista.properties
+mvn exec:java -e -DpropertyFile=plista.properties

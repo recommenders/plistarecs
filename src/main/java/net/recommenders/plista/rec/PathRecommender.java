@@ -243,16 +243,18 @@ public class PathRecommender implements Recommender {
         }
 
         public boolean add(WeightedItem e, int w) {
-            if (!positions.containsKey(e.getItemId())) {
-                positions.put(e.getItemId(), curPos);
-                e.setFreq(w + e.getFreq());
-                curPos++;
-                return super.add(e);
-            } else {
-                WeightedItem ee = get(positions.get(e.getItemId()));
-                ee.setFreq(w + ee.getFreq());
-                ee.setTime(e.getTime());
-                return false;
+            synchronized (this) {
+                if (!positions.containsKey(e.getItemId())) {
+                    positions.put(e.getItemId(), curPos);
+                    e.setFreq(w + e.getFreq());
+                    curPos++;
+                    return super.add(e);
+                } else {
+                    WeightedItem ee = get(positions.get(e.getItemId()));
+                    ee.setFreq(w + ee.getFreq());
+                    ee.setTime(e.getTime());
+                    return false;
+                }
             }
         }
     }
