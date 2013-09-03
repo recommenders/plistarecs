@@ -239,7 +239,7 @@ public class ContestLuceneRecommender implements Recommender {
         if (message == null)
             return null;
         else
-            System.out.println(message.getItemID());
+            System.out.println("\n\n" + message.getItemID());
         ////////////////////////////////////////
         // TODO: now the item information is not included in the recommendation request!!!
         ////////////////////////////////////////
