@@ -31,45 +31,48 @@ public class PROtherCategoryBasedRecommender extends PRCategoryBasedRecommender 
 
         Long domain = input.getDomainID();
         Long category = input.getItemCategory();
-        Long item = input.getItemID();
 
         final Set<Long> recItems = new HashSet<Long>();
-        recItems.add(item);
-        if (category != null) {
-            Map<Long, PathRecommender.WeightedItemList> categoryItems = mapDomainCategoryItems.get(domain);
-            if (categoryItems != null) {
-                // create a list with all the items not in this category
-                PathRecommender.WeightedItemList candidateItems = new PathRecommender.WeightedItemList();
-                for (Long cat : categoryItems.keySet()) {
-                    if (cat.equals(category)) {
-                        continue;
-                    }
-                    for (PathRecommender.WeightedItem wi : categoryItems.get(cat)) {
-                        candidateItems.add(wi);
-                    }
-                }
-                if (!candidateItems.isEmpty()) {
-                    // sort it
-                    Collections.sort(candidateItems);
-                    //
-                    int n = 0;
-                    int size = Math.min(limit, candidateItems.size());
-                    for (PathRecommender.WeightedItem candidate : candidateItems) {
-                        if (n >= size) {
-                            break;
+        if (domain != null) {
+            Long item = input.getItemID();
+            if (item != null) {
+                recItems.add(item);
+                if (category != null) {
+                    Map<Long, PathRecommender.WeightedItemList> categoryItems = mapDomainCategoryItems.get(domain);
+                    if (categoryItems != null) {
+                        // create a list with all the items not in this category
+                        PathRecommender.WeightedItemList candidateItems = new PathRecommender.WeightedItemList();
+                        for (Long cat : categoryItems.keySet()) {
+                            if (cat.equals(category)) {
+                                continue;
+                            }
+                            for (PathRecommender.WeightedItem wi : categoryItems.get(cat)) {
+                                candidateItems.add(wi);
+                            }
                         }
-                        if (forbiddenItems.contains(candidate.getItemId()) || item == candidate.getItemId()) {
-                            continue; // ignore this item
+                        if (!candidateItems.isEmpty()) {
+                            // sort it
+                            Collections.sort(candidateItems);
+                            //
+                            int n = 0;
+                            int size = Math.min(limit, candidateItems.size());
+                            for (PathRecommender.WeightedItem candidate : candidateItems) {
+                                if (n >= size) {
+                                    break;
+                                }
+                                if (forbiddenItems.contains(candidate.getItemId()) || item == candidate.getItemId()) {
+                                    continue; // ignore this item
+                                }
+                                recList.add(candidate.getItemId());
+                                recItems.add(candidate.getItemId());
+                                n++;
+                            }
                         }
-                        recList.add(candidate.getItemId());
-                        recItems.add(candidate.getItemId());
-                        n++;
                     }
                 }
             }
+            completeList(recList, recItems, mapDomainItems.get(domain), limit - recList.size(), forbiddenItems);
         }
-
-        completeList(recList, recItems, mapDomainItems.get(domain), limit - recList.size(), forbiddenItems);
         // just in case no information is found... (useful for the test case)
         completeList(recList, recItems, allItems, limit - recList.size(), forbiddenItems);
 

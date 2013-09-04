@@ -32,7 +32,7 @@ public class UserFilterWrapper implements Recommender {
 
     private InteractionModel getModel(Long domain) {
         if (domain == null) {
-            System.err.println("domain null");
+            logger.warn("EXCEPTION\tdomain null");
             return null;
         }
         InteractionModel model = domainModels.get(domain);
@@ -50,16 +50,20 @@ public class UserFilterWrapper implements Recommender {
         Long userID = message.getUserID();
         Long domain = message.getDomainID();
 
-        InteractionModel model = getModel(domain);
-        Set<Long> alreadyObservedItems = model.getInteractions(userID);
-        int n = 0;
-        for (Long i : allItems) {
-            // check items by the user
-            if (!alreadyObservedItems.contains(i)) {
-                filteredItems.add(i);
-                n++;
-                if (n >= limit) {
-                    break;
+        if (domain != null) {
+            InteractionModel model = getModel(domain);
+            if (userID != null) {
+                Set<Long> alreadyObservedItems = model.getInteractions(userID);
+                int n = 0;
+                for (Long i : allItems) {
+                    // check items by the user
+                    if (!alreadyObservedItems.contains(i)) {
+                        filteredItems.add(i);
+                        n++;
+                        if (n >= limit) {
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -75,8 +79,9 @@ public class UserFilterWrapper implements Recommender {
         final Long client = _impression.getUserID();
         final Long item = _impression.getItemID();
 
-        getModel(domain).addImpression(client, item);
-
+        if (domain != null && client != null && item != null) {
+            getModel(domain).addImpression(client, item);
+        }
         rec.impression(_impression);
     }
 
@@ -85,8 +90,9 @@ public class UserFilterWrapper implements Recommender {
         final Long item = _feedback.getItemID();
         final Long domain = _feedback.getDomainID();
 
-        getModel(domain).addClick(client, item);
-
+        if (domain != null && client != null && item != null) {
+            getModel(domain).addClick(client, item);
+        }
         rec.click(_feedback);
     }
 

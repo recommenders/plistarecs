@@ -1,6 +1,7 @@
 package net.recommenders.plista.rec;
 
-import java.util.*;
+import java.util.List;
+import java.util.Properties;
 import net.recommenders.plista.client.Message;
 import net.recommenders.plista.recommender.Recommender;
 
