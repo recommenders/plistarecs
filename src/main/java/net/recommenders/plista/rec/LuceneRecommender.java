@@ -12,6 +12,7 @@ import java.util.Properties;
 import net.recommenders.plista.utils.ContentDB;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.de.GermanAnalyzer;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.store.Directory;
@@ -48,18 +49,18 @@ import org.apache.lucene.search.TopDocs;
  *
  * @author alan
  */
-public class ContestLuceneRecommender implements Recommender {
+public class LuceneRecommender implements Recommender {
 
-    private static final Logger logger = Logger.getLogger(ContestLuceneRecommender.class);
+    private static final Logger logger = Logger.getLogger(LuceneRecommender.class);
     private final Map<Long, IndexWriter> domainWriter = new HashMap<Long, IndexWriter>();
     private final Map<Long, IndexReader> domainReader = new HashMap<Long, IndexReader>();
     private Map<Long, HashSet<Long>> indexedDocs = new HashMap<Long, HashSet<Long>>();
-    private Map<Long, Document> cachedDocs = new HashMap<Long, Document>();
+    private Map<Long, Message> cachedMessages = new HashMap<Long, Message>();
     private static final int NUM_THREADS = 5;
     private ExecutorService pool = Executors.newFixedThreadPool(NUM_THREADS);
     public static final Analyzer ANALYZER = new GermanAnalyzer(Version.LUCENE_43);
     private static final int days = 3;
-    ContentDB contendDB = new ContentDB();
+    ContentDB contentDB = null;// = new ContentDB();
 
     static enum StatusField {
 
@@ -68,6 +69,7 @@ public class ContestLuceneRecommender implements Recommender {
         TITLE("title"),
         TEXT("text"),
         TEXTTITLE("texttitle"),
+        CONTENT("content"),
         URL("url"),
         RECOMMENDABLE("recommendable"),
         CREATED("created");
@@ -82,12 +84,28 @@ public class ContestLuceneRecommender implements Recommender {
     FieldType numOptions;
 
     /**
+     * Constructor
+     * @param db    whether or not to use ContentDB (i.e. whether or not url's are crawled)
+     */
+    public LuceneRecommender(boolean db){
+        if(db)
+            contentDB = new ContentDB();
+    }
+
+    /**
+     * Default constructor
+     */
+    public LuceneRecommender(){
+        this(false);
+    }
+
+    /**
      * main only used for debugging
      *
      * @param args
      */
     public static void main(String[] args) {
-        ContestLuceneRecommender ia = new ContestLuceneRecommender();
+        LuceneRecommender ia = new LuceneRecommender();
         ia.init();
         String queryString = "Genau hinschauen lohnt sich: Das Plakat ist voller Typen, Themen und Thesen - und wer noch genauer hinschaut, entdeckt";
         String domain = "1677";
@@ -155,22 +173,27 @@ public class ContestLuceneRecommender implements Recommender {
         numOptions.setIndexed(true);
         numOptions.setStored(true);
 
-        contendDB.init();
+        if(contentDB != null)
+            contentDB.init();
 
 
     }
 
-    private void addDocument(final Message _doc) {
-        Long domain = _doc.getDomainID();
-        Long itemID = _doc.getItemID();
-        String title = _doc.getItemTitle();
-        String text = _doc.getItemText();
-        String url = _doc.getItemURL();
-        Boolean recommendable = _doc.getItemRecommendable();
-        Long created = _doc.getItemCreated();
+    private void addDocument(final Message message) {
+        Long domain = message.getDomainID();
+        Long itemID = message.getItemID();
+        String title = message.getItemTitle();
+        String text = message.getItemText();
+        String url = message.getItemURL();
+        Boolean recommendable = message.getItemRecommendable();
+        Long created = message.getItemCreated();
 
-        if(!contendDB.itemExists(itemID))
-            contendDB.addMessage(_doc, "");
+        if(!cachedMessages.containsKey(itemID))
+            cachedMessages.put(itemID, message);
+
+        if(contentDB != null)
+            if(!contentDB.itemExists(itemID))
+                contentDB.addMessage(message, "");
         Document doc = new Document();
         doc.add(new LongField(StatusField.DOMAIN.name, domain, Field.Store.YES));
         doc.add(new Field(StatusField.ID.name, "" + itemID, numOptions));
@@ -235,18 +258,20 @@ public class ContestLuceneRecommender implements Recommender {
         Long domain = input.getDomainID();
         String title = "";
         String text = "";
-        Message message = contendDB.getMessage(itemID, domain);
-        if (message == null)
+        Message message = null;
+        if(contentDB != null)
+            message = contentDB.getMessage(itemID, domain);
+        else if(cachedMessages.containsKey(itemID))
+            message = cachedMessages.get(itemID);
+        else //if (message == null)
             return null;
-        else
-            System.out.println("\n\n" + message.getItemID());
-        ////////////////////////////////////////
-        // TODO: now the item information is not included in the recommendation request!!!
-        ////////////////////////////////////////
+        System.out.println("\n\n" + message.getItemID());
+
         title = message.getItemTitle();
         text = message.getItemText();
+        System.out.println("\n\n" + title + "  " + text + "\n");
 
-        Query idQuery = new TermQuery(new Term(StatusField.ID.name, "" + itemID));
+        Query idQuery = new TermQuery(new Term(StatusField.ID.name, itemID.toString()));
         QueryParser p = new QueryParser(Version.LUCENE_43, StatusField.TEXTTITLE.name, ANALYZER);
         Query query = null;
         DirectoryReader ir = null;
@@ -291,7 +316,6 @@ public class ContestLuceneRecommender implements Recommender {
             e.printStackTrace();
             logger.error(e.toString() + " DOMAIN: " + domain);
         }
-//        new StatsWriter(this.statFile, "rec", _item, _limit);
         return recList;
     }
 
@@ -310,8 +334,9 @@ public class ContestLuceneRecommender implements Recommender {
 
     @Override
     public void click(Message _feedback) {
-        final Long client = _feedback.getUserID();
-        final Long item = _feedback.getItemID();
+        update(_feedback);
+//        final Long client = _feedback.getUserID();
+//        final Long item = _feedback.getItemID();
         // write stats
 //            new StatsWriter(this.statFile, "feedback", "-1", item);
     }

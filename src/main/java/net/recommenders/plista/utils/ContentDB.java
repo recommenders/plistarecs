@@ -23,6 +23,15 @@ public class ContentDB {
     String dbFileName = "content.db";
     private HashSet<Long> items;
 
+    public ContentDB(){
+        items = new HashSet<Long>();
+    }
+
+    public static void main(String[] args){
+        ContentDB db = new ContentDB();
+        db.init();
+
+    }
 
 
     public void init() {
@@ -53,9 +62,6 @@ public class ContentDB {
         }
     }
 
-    public ContentDB(){
-        items = new HashSet<Long>();
-    }
 
     public boolean addMessage(Message message, String content){
         boolean result = false;

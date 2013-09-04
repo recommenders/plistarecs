@@ -14,7 +14,7 @@ public class ContestLuceneRecommenderWithUserFilter implements Recommender {
     private Recommender wrapped;
 
     public ContestLuceneRecommenderWithUserFilter() {
-        this.wrapped = new UserFilterWrapper(new WrappableRecommender(new ContestLuceneRecommender()));
+        this.wrapped = new UserFilterWrapper(new WrappableRecommender(new LuceneRecommender()));
     }
 
     public List<Long> recommend(Message input, Integer limit) {
