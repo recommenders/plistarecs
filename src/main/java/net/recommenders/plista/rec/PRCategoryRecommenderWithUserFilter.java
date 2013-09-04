@@ -7,29 +7,18 @@ import net.recommenders.plista.recommender.Recommender;
 
 /**
  *
- * @author alejandro
+ * @author alejandr
  */
-public class WrappableRecommender implements Recommender, WrappableRecommenderIF {
+public class PRCategoryRecommenderWithUserFilter implements Recommender {
 
     private Recommender wrapped;
-    private int factor;
 
-    public WrappableRecommender(Recommender wrapped) {
-        this(wrapped, 10);
+    public PRCategoryRecommenderWithUserFilter() {
+        this.wrapped = new UserFilterWrapper(new WrappableRecommender(new PRCategoryBasedRecommender()));
     }
 
-    public WrappableRecommender(Recommender wrapped, int factor) {
-        this.wrapped = wrapped;
-        this.factor = factor;
-    }
-
-    @Override
-    public List<Long> recommendAll(Message message, Integer limit) {
-        return wrapped.recommend(message, (factor * limit));
-    }
-
-    public List<Long> recommend(Message message, Integer limit) {
-        return wrapped.recommend(message, limit);
+    public List<Long> recommend(Message input, Integer limit) {
+        return wrapped.recommend(input, limit);
     }
 
     public void init() {
