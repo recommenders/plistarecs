@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.sql.*;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,7 +22,7 @@ public class ContentDB {
     private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
     private static Connection con;
     String dbFileName = "content.db";
-    private HashSet<Long> items;
+    private Set<Long> items;
 
     public ContentDB(){
         items = new HashSet<Long>();
@@ -74,7 +75,6 @@ public class ContentDB {
         else
             items.add(itemID);
         try{
-            Statement stat = con.createStatement();
             PreparedStatement prep = con
                     .prepareStatement("INSERT INTO messages VALUES(?,?,?,?,?);");
             prep.setString(1, itemID.toString());
@@ -85,7 +85,6 @@ public class ContentDB {
             prep.execute();
             prep.close();
             result = true;
-            stat.close();
         }catch(SQLException e){
             logger.error(e.getMessage());
         }

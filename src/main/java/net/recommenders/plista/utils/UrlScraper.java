@@ -12,30 +12,25 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Scanner;
 
-
 /**
- * Created with IntelliJ IDEA.
- * User: alan
- * Date: 2013-08-30
- * Time: 11:10
- * To change this template use File | Settings | File Templates.
+ * Created with IntelliJ IDEA. User: alan Date: 2013-08-30 Time: 11:10 To change
+ * this template use File | Settings | File Templates.
  */
-
 public class UrlScraper {
 
     private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
-
     private static final String FILEPATH = "items/";
     private static ContentDB db = null;
-
     private HashMap<Long, String> identifiers;
-    public UrlScraper(ContentDB _db){
+
+    public UrlScraper(ContentDB _db) {
         this.db = _db;
 
     }
-    public UrlScraper(){
+
+    public UrlScraper() {
         identifiers = new HashMap<Long, String>();
-        identifiers.put(13554L,"div#maincolumn"); //motor-talk.de
+        identifiers.put(13554L, "div#maincolumn"); //motor-talk.de
         identifiers.put(418L, "span.ArticleTitle, div.article_text"); //ksta.de
         identifiers.put(596L, "div.headline, p.absatz, "); //sport1.de
         identifiers.put(2522L, "article.idgArticleDetail"); //computerwoche.de
@@ -59,7 +54,7 @@ public class UrlScraper {
 //        db.disconnect();
     }
 
-    public void readLog(){
+    public void readLog() {
         int num = 0;
         Long itemID = null;
         Long domainID = null;
@@ -77,14 +72,14 @@ public class UrlScraper {
             while (scnr.hasNextLine()) {
                 num++;
                 String line = scnr.nextLine();
-                if(line.contains("item_update")){
+                if (line.contains("item_update")) {
                     line = line.split("\t")[2];
-                    final Message message = new ChallengeMessage().parseItemUpdate(line);
+                    final Message message = new ChallengeMessage().parseItemUpdate(line, false);
 //                    new Thread(){
 //                        public void run(){
                     try {
                         scrapeURL(message);
-                    }catch(InterruptedException e){
+                    } catch (InterruptedException e) {
                         logger.error(e.getMessage());
                         e.printStackTrace();
                     }
@@ -97,43 +92,41 @@ public class UrlScraper {
         }
     }
 
-    public void scrapeURL(Message message) throws InterruptedException
-    {
+    public void scrapeURL(Message message) throws InterruptedException {
         Long itemID = message.getItemID();
         Long domainID = message.getDomainID();
         String content = null;
         String url = message.getItemURL();
         Document doc = null;
-        if(db.itemExists(itemID))
+        if (db.itemExists(itemID)) {
             return;
-        try{
+        }
+        try {
             Thread.sleep(1000);
             doc = Jsoup.connect(url).timeout(10000).get();
-        }catch (IOException e){
+        } catch (IOException e) {
             logger.error(e.getMessage());
             e.printStackTrace();
         }
-        try{
+        try {
             content = doc.select(identifiers.get(domainID)).first().text();
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
             logger.error(e.getMessage());
-            System.out.println("ERROR: domain identifier not available or wrong. DOMAIN: " + domainID );
+            System.out.println("ERROR: domain identifier not available or wrong. DOMAIN: " + domainID);
         }
 
-        if(db.addMessage(message, content)){
-            try{
+        if (db.addMessage(message, content)) {
+            try {
                 File file = new File(FILEPATH + domainID.toString() + "/" + itemID.toString() + ".html");
                 file.getParentFile().mkdirs();
                 file.createNewFile();
                 BufferedWriter output = new BufferedWriter(new FileWriter(file));
                 output.write(doc.html());
                 output.close();
-            } catch (IOException e){
+            } catch (IOException e) {
                 logger.error(e.getMessage());
                 e.printStackTrace();
             }
         }
     }
-
 }
-
