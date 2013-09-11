@@ -79,7 +79,7 @@ public class UrlScraper {
                 String line = scnr.nextLine();
                 if(line.contains("item_update")){
                     line = line.split("\t")[2];
-                    final Message message = new ChallengeMessage().parseItemUpdate(line);
+                    final Message message = new ChallengeMessage().parseItemUpdate(line, false);
 //                    new Thread(){
 //                        public void run(){
                     try {
