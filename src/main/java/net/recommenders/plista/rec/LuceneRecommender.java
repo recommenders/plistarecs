@@ -321,7 +321,7 @@ public class LuceneRecommender implements Recommender {
 
     @Override
     public void impression(final Message _impression) {
-        update(_impression);
+        //update(_impression);
     }
 
     public void update(final Message _update) {
@@ -334,7 +334,7 @@ public class LuceneRecommender implements Recommender {
 
     @Override
     public void click(Message _feedback) {
-        update(_feedback);
+        //update(_feedback);
 //        final Long client = _feedback.getUserID();
 //        final Long item = _feedback.getItemID();
         // write stats
