@@ -258,7 +258,7 @@ public class LuceneRecommender implements Recommender {
         Long domain = input.getDomainID();
         String title = "";
         String text = "";
-        Message message = null;
+        Message message = input;
         if(contentDB != null)
             message = contentDB.getMessage(itemID, domain);
         else if(cachedMessages.containsKey(itemID))
