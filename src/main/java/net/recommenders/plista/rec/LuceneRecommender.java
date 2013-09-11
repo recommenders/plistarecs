@@ -188,6 +188,9 @@ public class LuceneRecommender implements Recommender {
         Boolean recommendable = message.getItemRecommendable();
         Long created = message.getItemCreated();
 
+        if(title == null)
+            return;
+
         if(!cachedMessages.containsKey(itemID))
             cachedMessages.put(itemID, message);
 
@@ -256,6 +259,10 @@ public class LuceneRecommender implements Recommender {
 
         Long itemID = input.getItemID();
         Long domain = input.getDomainID();
+
+        if(!domainWriter.containsKey(domain))
+            return null;
+        
         String title = "";
         String text = "";
         Message message = null;
@@ -327,7 +334,9 @@ public class LuceneRecommender implements Recommender {
     public void update(final Message _update) {
         pool.submit(new Thread() {
             public void run() {
+
                 addDocument(_update);
+
             }
         });
     }
