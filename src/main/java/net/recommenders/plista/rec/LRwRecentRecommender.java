@@ -156,7 +156,7 @@ public class LRwRecentRecommender implements Recommender {
         Boolean recommendable = message.getItemRecommendable();
         Long created = message.getItemCreated();
 
-        if(title == null)
+        if(title == null || recommendable == null)
             return;
 
         if(!cachedMessages.containsKey(itemID))
