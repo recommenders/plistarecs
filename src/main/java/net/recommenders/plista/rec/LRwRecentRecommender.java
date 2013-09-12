@@ -239,7 +239,6 @@ public class LRwRecentRecommender implements Recommender {
         Long itemID = input.getItemID();
         Long domain = input.getDomainID();
 
-
         if(!domainWriter.containsKey(domain))
             return null;
 
@@ -252,9 +251,11 @@ public class LRwRecentRecommender implements Recommender {
             message = cachedMessages.get(itemID);
         else //if (message == null)
             return null;
+        System.out.println("\n\n" + message.getItemID() + "\t" + domain);
 
         title = message.getItemTitle();
         text = message.getItemText();
+        System.out.println("\n\n" + title + "  " + text + "\n");
 
         Query idQuery = new TermQuery(new Term(StatusField.ID.name, itemID.toString()));
         QueryParser p = new QueryParser(Version.LUCENE_43, StatusField.TEXTTITLE.name, ANALYZER);
@@ -279,7 +280,9 @@ public class LRwRecentRecommender implements Recommender {
             for (ScoreDoc sd : rs.scoreDocs) {
                 Document hit = is.doc(sd.doc);
                 long item = Long.parseLong(hit.get(StatusField.ID.name).toString());
+//                if (!falseItems.containsItem(item)) {
                 recList.add(item);
+//                }
             }
             if (recList.size() < limit) {
                 cq = new BooleanQuery();
@@ -296,11 +299,10 @@ public class LRwRecentRecommender implements Recommender {
                 }
             }
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
             logger.error(e.toString() + " DOMAIN: " + domain);
-//            logger.info(e.toString() + " DOMAIN: " + domain);
-
         }
+
         if(recList.size() < limit){
             List<Long> backupList = backupRec.recommend(input, limit);
             for (Long item : backupList){
