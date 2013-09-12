@@ -195,7 +195,7 @@ public class LRwRecentRecommender implements Recommender {
                     this.domainWriter.put(domain, iw);
                 } catch (IOException e) {
                     logger.error(e.getMessage());
-                    logger.info(e.getMessage());
+//                    logger.info(e.getMessage());
                 }
             }
         }
@@ -207,7 +207,7 @@ public class LRwRecentRecommender implements Recommender {
                     iw.updateDocument(new Term(StatusField.ID.name, "" + itemID), doc);
                 } catch (IOException e) {
                     logger.error(e.getMessage());
-                    logger.info(e.getMessage());
+//                    logger.info(e.getMessage());
                 }
                 return;
             } else if (indexedDocs.containsKey(domain) && !indexedDocs.get(domain).contains(itemID)) {
@@ -224,10 +224,10 @@ public class LRwRecentRecommender implements Recommender {
                 domainWriter.put(domain, iw);
             } catch (IOException e) {
                 logger.error(e.getMessage());
-                logger.info(e.getMessage());
+//                logger.info(e.getMessage());
             } catch (NullPointerException e) {
                 logger.error(e.getMessage());
-                logger.info(e.getMessage());
+//                logger.info(e.getMessage());
             }
         }
     }
@@ -296,9 +296,9 @@ public class LRwRecentRecommender implements Recommender {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             logger.error(e.toString() + " DOMAIN: " + domain);
-            logger.info(e.toString() + " DOMAIN: " + domain);
+//            logger.info(e.toString() + " DOMAIN: " + domain);
 
         }
         if(recList.size() < limit){
