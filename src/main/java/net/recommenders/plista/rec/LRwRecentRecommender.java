@@ -1,57 +1,34 @@
 package net.recommenders.plista.rec;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
+import net.recommenders.plista.client.Message;
+import net.recommenders.plista.recommender.RecentRecommender;
+import net.recommenders.plista.recommender.Recommender;
 import net.recommenders.plista.utils.ContentDB;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.de.GermanAnalyzer;
+import org.apache.lucene.document.*;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.recommenders.plista.client.Message;
-import net.recommenders.plista.recommender.Recommender;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.LongField;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.FieldInfo;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Filter;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.NumericRangeFilter;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopDocs;
 
 /**
  * An index for news articles
  *
  * @author alan
  */
-public class LuceneRecommender implements Recommender {
+public class LRwRecentRecommender implements Recommender {
 
-    private static final Logger logger = Logger.getLogger(LuceneRecommender.class);
+    private static final Logger logger = Logger.getLogger(LRwRecentRecommender.class);
     private final Map<Long, IndexWriter> domainWriter = new HashMap<Long, IndexWriter>();
     private Map<Long, HashSet<Long>> indexedDocs = new HashMap<Long, HashSet<Long>>();
     private Map<Long, Message> cachedMessages = new HashMap<Long, Message>();
@@ -60,6 +37,7 @@ public class LuceneRecommender implements Recommender {
     public static final Analyzer ANALYZER = new GermanAnalyzer(Version.LUCENE_43);
     private static final int days = 3;
     ContentDB contentDB = null;// = new ContentDB();
+    Recommender backupRec;
 
     static enum StatusField {
         ID("id"),
@@ -85,15 +63,16 @@ public class LuceneRecommender implements Recommender {
      * Constructor
      * @param db    whether or not to use ContentDB (i.e. whether or not url's are crawled)
      */
-    public LuceneRecommender(boolean db){
+    public LRwRecentRecommender(boolean db){
         if(db)
             contentDB = new ContentDB();
+        backupRec = new RecentRecommender();
     }
 
     /**
      * Default constructor
      */
-    public LuceneRecommender(){
+    public LRwRecentRecommender(){
         this(false);
     }
 
@@ -103,7 +82,7 @@ public class LuceneRecommender implements Recommender {
      * @param args
      */
     public static void main(String[] args) {
-        LuceneRecommender ia = new LuceneRecommender();
+        LRwRecentRecommender ia = new LRwRecentRecommender();
         ia.init();
         String queryString = "Genau hinschauen lohnt sich: Das Plakat ist voller Typen, Themen und Thesen - und wer noch genauer hinschaut, entdeckt";
         String domain = "1677";
@@ -153,6 +132,7 @@ public class LuceneRecommender implements Recommender {
     }
 
     public void init() {
+        backupRec.init();
         textOptions = new FieldType();
         textOptions.setIndexed(true);
         textOptions.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
@@ -248,6 +228,7 @@ public class LuceneRecommender implements Recommender {
         Long itemID = input.getItemID();
         Long domain = input.getDomainID();
 
+
         if(!domainWriter.containsKey(domain))
             return null;
 
@@ -307,18 +288,28 @@ public class LuceneRecommender implements Recommender {
             e.printStackTrace();
             logger.error(e.toString() + " DOMAIN: " + domain);
         }
+        if(recList.size() < limit){
+            List<Long> backupList = backupRec.recommend(input, limit);
+            for (Long item : backupList){
+                if(!recList.contains(item)){
+                    recList.add(item);
+                }
+            }
+
+        }
         return recList;
     }
 
     @Override
     public void impression(final Message _impression) {
+        backupRec.impression(_impression);
         //update(_impression);
     }
 
     public void update(final Message _update) {
         pool.submit(new Thread() {
             public void run() {
-
+                backupRec.update(_update);
                 addDocument(_update);
 
             }
@@ -327,6 +318,7 @@ public class LuceneRecommender implements Recommender {
 
     @Override
     public void click(Message _feedback) {
+        backupRec.click(_feedback);
         //update(_feedback);
 //        final Long client = _feedback.getUserID();
 //        final Long item = _feedback.getItemID();
@@ -336,6 +328,7 @@ public class LuceneRecommender implements Recommender {
 
     @Override
     public void setProperties(Properties properties) {
+        backupRec.setProperties(properties);
         // TODO Auto-generated method stub
     }
 }
