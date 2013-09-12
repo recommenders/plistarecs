@@ -313,13 +313,13 @@ public class LRwRecentRecommender implements Recommender {
     }
 
     public void update(final Message _update) {
-        pool.submit(new Thread() {
-            public void run() {
+        //pool.submit(new Thread() {
+        //    public void run() {
                 backupRec.update(_update);
                 addDocument(_update);
 
-            }
-        });
+         //   }
+        //});
     }
 
     @Override
