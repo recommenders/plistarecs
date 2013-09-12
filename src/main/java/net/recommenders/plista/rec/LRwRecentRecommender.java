@@ -133,11 +133,18 @@ public class LRwRecentRecommender implements Recommender {
 
     public void init() {
         backupRec.init();
+
         textOptions = new FieldType();
         textOptions.setIndexed(true);
         textOptions.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
         textOptions.setStored(true);
         textOptions.setTokenized(true);
+
+        recOptions = new FieldType();
+        recOptions.setIndexed(true);
+        recOptions.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+        recOptions.setStored(true);
+        recOptions.setTokenized(false);
 
         numOptions = new FieldType();
         numOptions.setIndexed(true);
@@ -173,7 +180,7 @@ public class LRwRecentRecommender implements Recommender {
         doc.add(new Field(StatusField.TEXTTITLE.name, title + " " + text, textOptions));
         doc.add(new StringField(StatusField.URL.name, url, Field.Store.YES));
         doc.add(new LongField(StatusField.CREATED.name, created.longValue(), Field.Store.YES));
-        doc.add(new Field(StatusField.RECOMMENDABLE.name, "" + recommendable, textOptions));
+        doc.add(new Field(StatusField.RECOMMENDABLE.name, "" + recommendable, recOptions));
 
         // the whole block must be sync'ed, otherwise more than one thread 
         // will try to create the index because they don't find the domain in the map

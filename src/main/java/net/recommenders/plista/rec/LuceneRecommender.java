@@ -53,6 +53,7 @@ public class LuceneRecommender implements Recommender {
 
     private static final Logger logger = Logger.getLogger(LuceneRecommender.class);
     private final Map<Long, IndexWriter> domainWriter = new HashMap<Long, IndexWriter>();
+    private final Map<Long, IndexReader> domainReader = new HashMap<Long, IndexReader>();
     private Map<Long, HashSet<Long>> indexedDocs = new HashMap<Long, HashSet<Long>>();
     private Map<Long, Message> cachedMessages = new HashMap<Long, Message>();
     private static final int NUM_THREADS = 5;
@@ -62,6 +63,7 @@ public class LuceneRecommender implements Recommender {
     ContentDB contentDB = null;// = new ContentDB();
 
     static enum StatusField {
+
         ID("id"),
         DOMAIN("domain"),
         TITLE("title"),
@@ -126,6 +128,7 @@ public class LuceneRecommender implements Recommender {
         } catch (org.apache.lucene.queryparser.classic.ParseException e1) {
             logger.error(e1.getMessage());
         }
+
         try {
             ir = DirectoryReader.open(ia.domainWriter.get(domain), true);
             is = new IndexSearcher(ir);
@@ -159,12 +162,21 @@ public class LuceneRecommender implements Recommender {
         textOptions.setStored(true);
         textOptions.setTokenized(true);
 
+
+        recOptions = new FieldType();
+        recOptions.setIndexed(true);
+        recOptions.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+        recOptions.setStored(true);
+        recOptions.setTokenized(false);
+
         numOptions = new FieldType();
         numOptions.setIndexed(true);
         numOptions.setStored(true);
 
         if(contentDB != null)
             contentDB.init();
+
+
     }
 
     private void addDocument(final Message message) {
@@ -193,7 +205,7 @@ public class LuceneRecommender implements Recommender {
         doc.add(new Field(StatusField.TEXTTITLE.name, title + " " + text, textOptions));
         doc.add(new StringField(StatusField.URL.name, url, Field.Store.YES));
         doc.add(new LongField(StatusField.CREATED.name, created.longValue(), Field.Store.YES));
-        doc.add(new Field(StatusField.RECOMMENDABLE.name, "" + recommendable, textOptions));
+        doc.add(new Field(StatusField.RECOMMENDABLE.name, "" + recommendable, recOptions));
 
         // the whole block must be sync'ed, otherwise more than one thread 
         // will try to create the index because they don't find the domain in the map
@@ -260,9 +272,11 @@ public class LuceneRecommender implements Recommender {
             message = cachedMessages.get(itemID);
         else //if (message == null)
             return null;
+        System.out.println("\n\n" + message.getItemID() + "\t" + domain);
 
         title = message.getItemTitle();
         text = message.getItemText();
+        System.out.println("\n\n" + title + "  " + text + "\n");
 
         Query idQuery = new TermQuery(new Term(StatusField.ID.name, itemID.toString()));
         QueryParser p = new QueryParser(Version.LUCENE_43, StatusField.TEXTTITLE.name, ANALYZER);
@@ -287,7 +301,9 @@ public class LuceneRecommender implements Recommender {
             for (ScoreDoc sd : rs.scoreDocs) {
                 Document hit = is.doc(sd.doc);
                 long item = Long.parseLong(hit.get(StatusField.ID.name).toString());
+//                if (!falseItems.containsItem(item)) {
                 recList.add(item);
+//                }
             }
             if (recList.size() < limit) {
                 cq = new BooleanQuery();
