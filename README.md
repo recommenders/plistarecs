@@ -13,7 +13,7 @@ Implemented by [recommenders.net](http://www.recommenders.net)
 * java 7
 * maven
 
-###Running the recommender
+###Running a recommender
 1. Get the client
   1. ```git clone https://github.com/recommenders/plistaclient```
   2. ```cd plistaclient```
@@ -21,9 +21,10 @@ Implemented by [recommenders.net](http://www.recommenders.net)
 2. Get the recommenders
   1. ```git clone https://github.com/recommenders/plistarecs```
   2. ```cd plistarecs```
-  3. ```vim plista.properties``` to configure recommender and port
+  3. ```vim plista.properties``` to configure a r[ecommender](https://github.com/recommenders/plistarecs/tree/master/src/main/java/net/recommenders/plista/rec) and port
   4. ```mvn clean package& ./run.sh``` (preferably in a ```screen```)
-3. Win the [prizes](https://sites.google.com/site/newsrec2013/challenge#TOC-Prizes)
+3. Register account at [ORP](http://orp.plista.com) and connect to your server
+4. Win the [prizes](https://sites.google.com/site/newsrec2013/challenge#TOC-Prizes)
 
 ###Additional info
 The recommenders will fail initially as there is no data provided in the repository. As the recommender receives impressions from Plista it will create data files in the folder it lives. This data is used for recommendation.
