@@ -1,10 +1,12 @@
 plistarecs
 ==========
 
-Set of recommenders for the Plista News Recommendation Challenge
+Set of recommenders for the [Plista News Recommendation Challenge](https://sites.google.com/site/newsrec2013/challenge).
 
-The recommenders uses a modified version the Plista contest client implementation by @matip available at
-https://github.com/alans/plistacontest
+The recommenders use a modified version the Plista contest client implementation by [@matip](http://twitter.com/matip) available at
+[plistacontest](https://github.com/matip/plistacontest) (forked [here](https://github.com/recommenders/plistacontest))
+
+Implemented by [recommenders.net](http://www.recommenders.net)
 
 ##Instructions
 ###Prerequisites
