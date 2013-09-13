@@ -11,6 +11,7 @@ https://github.com/alans/plistacontest
 * java 7
 * maven
 
+###Running the recommender
 1. Get the client
   1. ```git clone https://github.com/recommenders/plistaclient```
   2. ```cd plistaclient```
