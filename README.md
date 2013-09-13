@@ -3,8 +3,8 @@ plistarecs
 
 Set of recommenders for the [Plista News Recommendation Challenge](https://sites.google.com/site/newsrec2013/challenge).
 
-The recommenders use a modified version the Plista contest client implementation by [@matip](http://twitter.com/matip) available at
-[plistacontest](https://github.com/matip/plistacontest) (forked [here](https://github.com/recommenders/plistacontest))
+The recommenders use modified versions of the Plista contest client implementation by [@matip](http://twitter.com/matip) available at
+[plistacontest](https://github.com/matip/plistacontest) (forked [here](https://github.com/recommenders/plistacontest)) and the Plista Challenge client implementation by [@torbenbrodt](https://twitter.com/torbenbrodt) available [here](https://github.com/plista/orp-sdk-java)
 
 Implemented by [recommenders.net](http://www.recommenders.net)
 
