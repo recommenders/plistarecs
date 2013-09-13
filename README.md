@@ -22,3 +22,7 @@ https://github.com/alans/plistacontest
   3. ```vim plista.properties``` to configure recommender and port
   4. ```mvn clean package& ./run.sh``` (preferably in a ```screen```)
 3. Win the prizes
+
+###Additional info
+The recommenders will fail initially as there is no data provided in the repository. As the recommender receives impressions from Plista it will create data files in the folder it lives. This data is used for recommendation.
+Note that data files grow fast, you will need plenty of gigabytes of storage for this.
