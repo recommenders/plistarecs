@@ -85,17 +85,20 @@ public class LuceneRecommender implements Recommender {
 
     /**
      * Constructor
-     * @param db    whether or not to use ContentDB (i.e. whether or not url's are crawled)
+     *
+     * @param db whether or not to use ContentDB (i.e. whether or not url's are
+     * crawled)
      */
-    public LuceneRecommender(boolean db){
-        if(db)
+    public LuceneRecommender(boolean db) {
+        if (db) {
             contentDB = new ContentDB();
+        }
     }
 
     /**
      * Default constructor
      */
-    public LuceneRecommender(){
+    public LuceneRecommender() {
         this(false);
     }
 
@@ -173,8 +176,9 @@ public class LuceneRecommender implements Recommender {
         numOptions.setIndexed(true);
         numOptions.setStored(true);
 
-        if(contentDB != null)
+        if (contentDB != null) {
             contentDB.init();
+        }
 
 
     }
@@ -188,15 +192,19 @@ public class LuceneRecommender implements Recommender {
         Boolean recommendable = message.getItemRecommendable();
         Long created = message.getItemCreated();
 
-        if(title == null)
+        if (title == null) {
             return;
+        }
 
-        if(!cachedMessages.containsKey(itemID))
+        if (!cachedMessages.containsKey(itemID)) {
             cachedMessages.put(itemID, message);
+        }
 
-        if(contentDB != null)
-            if(!contentDB.itemExists(itemID))
+        if (contentDB != null) {
+            if (!contentDB.itemExists(itemID)) {
                 contentDB.addMessage(message, "");
+            }
+        }
         Document doc = new Document();
         doc.add(new LongField(StatusField.DOMAIN.name, domain, Field.Store.YES));
         doc.add(new Field(StatusField.ID.name, "" + itemID, numOptions));
@@ -260,18 +268,21 @@ public class LuceneRecommender implements Recommender {
         Long itemID = input.getItemID();
         Long domain = input.getDomainID();
 
-        if(!domainWriter.containsKey(domain))
+        if (!domainWriter.containsKey(domain)) {
             return null;
+        }
 
         String title = "";
         String text = "";
         Message message = null;
-        if(contentDB != null)
+        if (contentDB != null) {
             message = contentDB.getMessage(itemID, domain);
-        else if(cachedMessages.containsKey(itemID))
+        } else if (cachedMessages.containsKey(itemID)) {
             message = cachedMessages.get(itemID);
-        else //if (message == null)
+        } else //if (message == null)
+        {
             return null;
+        }
         System.out.println("\n\n" + message.getItemID() + "\t" + domain);
 
         title = message.getItemTitle();
@@ -332,13 +343,13 @@ public class LuceneRecommender implements Recommender {
     }
 
     public void update(final Message _update) {
-        pool.submit(new Thread() {
-            public void run() {
-
+//        pool.execute(new Thread() {
+//            public void run() {
+//
                 addDocument(_update);
-
-            }
-        });
+//
+//            }
+//        });
     }
 
     @Override
