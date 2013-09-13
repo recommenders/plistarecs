@@ -22,7 +22,7 @@ Implemented by [recommenders.net](http://www.recommenders.net)
   1. ```git clone https://github.com/recommenders/plistarecs```
   2. ```cd plistarecs```
   3. ```vim plista.properties``` to configure a r[ecommender](https://github.com/recommenders/plistarecs/tree/master/src/main/java/net/recommenders/plista/rec) and port
-  4. ```mvn clean package& ./run.sh``` (preferably in a ```screen```)
+  4. ```mvn clean package; ./run.sh``` (preferably in a ```screen```)
 3. Register account at [ORP](http://orp.plista.com) and connect to your server
 4. Win the [prizes](https://sites.google.com/site/newsrec2013/challenge#TOC-Prizes)
 
