@@ -23,7 +23,7 @@ Implemented by [recommenders.net](http://www.recommenders.net)
   2. ```cd plistarecs```
   3. ```vim plista.properties``` to configure recommender and port
   4. ```mvn clean package& ./run.sh``` (preferably in a ```screen```)
-3. Win the prizes
+3. Win the [prizes](https://sites.google.com/site/newsrec2013/challenge#TOC-Prizes)
 
 ###Additional info
 The recommenders will fail initially as there is no data provided in the repository. As the recommender receives impressions from Plista it will create data files in the folder it lives. This data is used for recommendation.
