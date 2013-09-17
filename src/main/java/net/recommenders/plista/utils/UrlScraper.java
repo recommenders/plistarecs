@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -21,7 +22,7 @@ public class UrlScraper {
     private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
     private static final String FILEPATH = "items/";
     private static ContentDB db = null;
-    private HashMap<Long, String> identifiers;
+    private Map<Long, String> identifiers;
 
     public UrlScraper(ContentDB _db) {
         this.db = _db;

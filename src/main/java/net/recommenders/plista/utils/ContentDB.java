@@ -11,39 +11,35 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
- * User: alan
- * Date: 2013-08-30
- * Time: 14:28
- * To change this template use File | Settings | File Templates.
+ * Created with IntelliJ IDEA. User: alan Date: 2013-08-30 Time: 14:28 To change
+ * this template use File | Settings | File Templates.
  */
 public class ContentDB {
 
     private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
     private static Connection con;
-    String dbFileName = "content.db";
+    private String dbFileName = "content.db";
     private Set<Long> items;
 
-    public ContentDB(){
+    public ContentDB() {
         items = new HashSet<Long>();
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         ContentDB db = new ContentDB();
         db.init();
-
     }
 
-
     public void init() {
-        try{
+        try {
             Class.forName("org.sqlite.JDBC");
 
             File dbFile = new File(dbFileName);
             boolean dbExists = dbFile.exists();
-            con = DriverManager.getConnection("jdbc:sqlite:"+dbFileName);
-            if(dbExists)
+            con = DriverManager.getConnection("jdbc:sqlite:" + dbFileName);
+            if (dbExists) {
                 con.prepareStatement("ATTACH DATABASE '" + dbFileName + "' AS 'content'").execute();
+            }
 
             Statement stat = con.createStatement();
             stat.executeUpdate("CREATE TABLE IF NOT EXISTS messages("
@@ -55,26 +51,25 @@ public class ContentDB {
                     + "PRIMARY KEY (id));"
                     + "CREATE INDEX IF NOT EXISTS 'domain' ON 'messages' ('domain' ASC);");
             stat.close();
-        }catch(ClassNotFoundException e){
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
-        }
-        catch(SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-
-    public boolean addMessage(Message message, String content){
+    public boolean addMessage(Message message, String content) {
         boolean result = false;
         Long itemID = message.getItemID();
         Long domainID = message.getDomainID();
         String title = message.getItemTitle();
         String text = message.getItemText();
-        if(items.contains(itemID))
+        if (items.contains(itemID)) {
             return true;
-        else
+        } else {
             items.add(itemID);
-        try{
+        }
+        try {
             PreparedStatement prep = con
                     .prepareStatement("INSERT INTO messages VALUES(?,?,?,?,?);");
             prep.setString(1, itemID.toString());
@@ -85,35 +80,35 @@ public class ContentDB {
             prep.execute();
             prep.close();
             result = true;
-        }catch(SQLException e){
+        } catch (SQLException e) {
             logger.error(e.getMessage());
         }
         return result;
     }
 
-
-    public String getContent(Long itemID, Long domainID){
+    public String getContent(Long itemID, Long domainID) {
         String result = null;
-        try{
+        try {
             Statement stat = con.createStatement();
-            ResultSet res = stat.executeQuery("SELECT * FROM messages where domain = '"+domainID
-                    +"' and id = '"+ itemID+"'");
-            while (res.next())
+            ResultSet res = stat.executeQuery("SELECT * FROM messages where domain = '" + domainID
+                    + "' and id = '" + itemID + "'");
+            while (res.next()) {
                 result = res.getString("content");
+            }
             stat.close();
-        }catch (SQLException e){
+        } catch (SQLException e) {
             logger.error(e.getMessage());
         }
         return result;
     }
 
-    public Message getMessage(Long itemID, Long domainID){
+    public Message getMessage(Long itemID, Long domainID) {
         ChallengeMessage message = null;
-        try{
+        try {
             Statement stat = con.createStatement();
-            ResultSet res = stat.executeQuery("SELECT * FROM messages where domain = '"+domainID
-                    +"' and id = '"+ itemID+"'");
-            while (res.next()){
+            ResultSet res = stat.executeQuery("SELECT * FROM messages where domain = '" + domainID
+                    + "' and id = '" + itemID + "'");
+            while (res.next()) {
                 message = new ChallengeMessage();
                 message.setItemID(itemID);
                 message.setDomainID(domainID);
@@ -121,18 +116,17 @@ public class ContentDB {
                 message.setItemTitle(res.getString("title"));
             }
             stat.close();
-        }catch (SQLException e){
+        } catch (SQLException e) {
             logger.error(e.getMessage());
         }
         return message;
     }
 
-    public void disconnect() throws  SQLException{
+    public void disconnect() throws SQLException {
         con.close();
     }
 
-    public boolean itemExists(Long itemID){
+    public boolean itemExists(Long itemID) {
         return items.contains(itemID);
     }
-
 }
