@@ -88,8 +88,8 @@ public class LogGenerator {
             }
             if (processFeedback) {
                 processFeedback(con);
+                System.out.println("Finished processing feedback");
             }
-            System.out.println("Finished processing feedback");
             con.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -336,9 +336,15 @@ public class LogGenerator {
 
         switch (step) {
             case 1: {
-//                generateDbFromORPSelfLogs(new String[]{args[1]}, args[3], args[2], true, true);
-//                generateDbFromORPSelfLogs(new String[]{args[1]}, args[3], args[2], true, false);
-//                generateDbFromORPSelfLogs(new String[]{args[1]}, args[3], args[2], false, true);
+                generateDbFromORPSelfLogs(new String[]{args[1]}, args[3], args[2], true, true);
+            }
+            break;
+            case 11: {
+                generateDbFromORPSelfLogs(new String[]{args[1]}, args[3], args[2], true, false);
+            }
+            break;
+            case 12: {
+                generateDbFromORPSelfLogs(new String[]{args[1]}, args[3], args[2], false, true);
             }
             break;
 

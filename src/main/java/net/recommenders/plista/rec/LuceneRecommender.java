@@ -283,11 +283,11 @@ public class LuceneRecommender implements Recommender {
         {
             return new ArrayList<Long>();
         }
-        System.out.println("\n\n" + message.getItemID() + "\t" + domain);
+//        System.out.println("\n\n" + message.getItemID() + "\t" + domain);
 
         title = message.getItemTitle();
         text = message.getItemText();
-        System.out.println("\n\n" + title + "  " + text + "\n");
+//        System.out.println("\n\n" + title + "  " + text + "\n");
 
         Query idQuery = new TermQuery(new Term(StatusField.ID.name, itemID.toString()));
         QueryParser p = new QueryParser(Version.LUCENE_43, StatusField.TEXTTITLE.name, ANALYZER);
@@ -299,7 +299,9 @@ public class LuceneRecommender implements Recommender {
         Filter filter = NumericRangeFilter.newLongRange(StatusField.CREATED.name, ((System.currentTimeMillis() / 1000) - (days * 86400)), Long.MAX_VALUE, true, true);
 
         try {
-            query = p.parse(QueryParser.escape(title + text));
+            String queryText = title + text;
+            queryText = queryText.replace("\"", "'").trim();
+            query = p.parse(QueryParser.escape(queryText));
             cq.add(rq, BooleanClause.Occur.MUST);
             cq.add(query, BooleanClause.Occur.MUST);
             cq.add(idQuery, BooleanClause.Occur.MUST_NOT);

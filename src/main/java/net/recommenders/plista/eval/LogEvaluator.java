@@ -11,7 +11,12 @@ import java.util.Set;
 import net.recommenders.plista.client.ChallengeMessage;
 import net.recommenders.plista.client.Message;
 import net.recommenders.plista.rec.ConstrainedRecommender;
+import net.recommenders.plista.rec.combination.CombinedLuceneRecentRecommender;
 import net.recommenders.plista.rec.LuceneRecommender;
+import net.recommenders.plista.rec.PRCategoryBasedRecommender;
+import net.recommenders.plista.rec.combination.PRCategoryRecommenderWithUserFilter;
+import net.recommenders.plista.rec.PROtherCategoryBasedRecommender;
+import net.recommenders.plista.rec.combination.PROtherCategoryRecommenderWithUserFilter;
 import net.recommenders.plista.recommender.RecentRecommender;
 import net.recommenders.plista.recommender.Recommender;
 
@@ -124,7 +129,7 @@ public class LogEvaluator {
     }
 
     public static void main(String[] args) throws Exception {
-        args = new String[]{"1", "log_from_db-small.log", "./"};
+//        args = new String[]{"1", "log_from_db-small.log", "./"};
 
 //        args = new String[]{"1", "log_from_db.log", "./"};
 
@@ -136,8 +141,13 @@ public class LogEvaluator {
 
         switch (step) {
             case 1: {
-                doFreeEvaluation(new File(args[1]), new Recommender[]{new RecentRecommender()}, new File[]{new File(args[2] + "recent.free.out")});
-                doFreeEvaluation(new File(args[1]), new Recommender[]{new LuceneRecommender()}, new File[]{new File(args[2] + "lucene.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new RecentRecommender()}, new File[]{new File(args[2] + "recent.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new LuceneRecommender()}, new File[]{new File(args[2] + "lucene.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new LRwRecentRecommender()}, new File[]{new File(args[2] + "lucenerecent.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new PRCategoryBasedRecommender()}, new File[]{new File(args[2] + "prc.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new PROtherCategoryBasedRecommender()}, new File[]{new File(args[2] + "proc.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new PRCategoryRecommenderWithUserFilter()}, new File[]{new File(args[2] + "prcwuf.free.out")});
+//                doFreeEvaluation(new File(args[1]), new Recommender[]{new PROtherCategoryRecommenderWithUserFilter()}, new File[]{new File(args[2] + "procwuf.free.out")});
             }
             case 2: {
 //                doConstrainedEvaluation(new File(args[1]), new ConstrainedRecommender[]{new RecentRecommender()}, new File[]{new File(args[2] + "recent.cons.out")});

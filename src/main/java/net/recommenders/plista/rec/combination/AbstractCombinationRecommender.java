@@ -36,23 +36,22 @@ public abstract class AbstractCombinationRecommender implements Recommender {
             throw new IllegalArgumentException("Too many recommenders ('recommend' method needs to be overridden): " + recommenders.length);
         }
         Recommender recommender = recommenders[0];
+        Recommender backupRecommender = null;
         if (recommenders.length == 2) {
-            Recommender backupRecommender = recommenders[1];
-            final List<Long> recList = recommender.recommend(input, limit);
-            // we complete the recommendation list if a backup recommender was provided
-            if (backupRecommender != null && recList.size() < limit) {
-                List<Long> backupList = backupRecommender.recommend(input, BACKUP_LENGTH * limit);
-                for (Long item : backupList) {
-                    if (recList.size() < limit && !recList.contains(item)) {
-                        recList.add(item);
-                    }
-                }
-
-            }
-            return recList;
-        } else {
-            return recommender.recommend(input, limit);
+            backupRecommender = recommenders[1];
         }
+        final List<Long> recList = recommender.recommend(input, limit);
+        // we complete the recommendation list if a backup recommender was provided
+        if (backupRecommender != null && recList.size() < limit) {
+            List<Long> backupList = backupRecommender.recommend(input, BACKUP_LENGTH * limit);
+            for (Long item : backupList) {
+                if (recList.size() < limit && !recList.contains(item)) {
+                    recList.add(item);
+                }
+            }
+
+        }
+        return recList;
     }
 
     public void init() {
