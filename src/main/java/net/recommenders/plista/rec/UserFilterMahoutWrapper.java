@@ -28,14 +28,14 @@ public class UserFilterMahoutWrapper implements Recommender {
     private static final Logger logger = Logger.getLogger(UserFilterMahoutWrapper.class);
     private static final long UPDATE_TIME = 10L * 60 * 1000; // 10 minutes
     private static final int NUM_THREADS = 5;
-    private WrappableRecommenderIF rec;
+    private WrappableRecommender rec;
     // number of days taken into account for the data model
     private int numberOfDays;
     private Map<Long, DataModel> domainModels;
     private long lastUpdate;
     private ExecutorService pool;
 
-    public UserFilterMahoutWrapper(WrappableRecommenderIF rec) {
+    public UserFilterMahoutWrapper(WrappableRecommender rec) {
         this.rec = rec;
 
         this.pool = Executors.newFixedThreadPool(NUM_THREADS);

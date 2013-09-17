@@ -21,10 +21,10 @@ import org.apache.log4j.Logger;
 public class UserFilterWrapper implements Recommender {
 
     private static final Logger logger = Logger.getLogger(UserFilterWrapper.class);
-    private WrappableRecommenderIF rec;
+    private WrappableRecommender rec;
     private Map<Long, InteractionModel> domainModels;
 
-    public UserFilterWrapper(WrappableRecommenderIF rec) {
+    public UserFilterWrapper(WrappableRecommender rec) {
         this.rec = rec;
 
         this.domainModels = new ConcurrentHashMap<Long, InteractionModel>();

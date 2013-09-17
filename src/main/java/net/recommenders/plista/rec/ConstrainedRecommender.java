@@ -9,6 +9,7 @@ import net.recommenders.plista.recommender.Recommender;
  *
  * @author alejandr
  */
-public interface ConstrainedRecommender extends Recommender{
+public interface ConstrainedRecommender extends Recommender {
+
     public List<Long> recommend(final Message _input, Set<Long> constraints);
 }
