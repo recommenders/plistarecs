@@ -288,6 +288,11 @@ public class LuceneRecommender implements Recommender {
         title = message.getItemTitle();
         text = message.getItemText();
 //        System.out.println("\n\n" + title + "  " + text + "\n");
+        String queryText = title + text;
+        queryText = queryText.replace("\"", "'").trim();
+        if(queryText.isEmpty()){
+            return new ArrayList<Long>();
+        }
 
         Query idQuery = new TermQuery(new Term(StatusField.ID.name, itemID.toString()));
         QueryParser p = new QueryParser(Version.LUCENE_43, StatusField.TEXTTITLE.name, ANALYZER);
@@ -299,8 +304,6 @@ public class LuceneRecommender implements Recommender {
         Filter filter = NumericRangeFilter.newLongRange(StatusField.CREATED.name, ((System.currentTimeMillis() / 1000) - (days * 86400)), Long.MAX_VALUE, true, true);
 
         try {
-            String queryText = title + text;
-            queryText = queryText.replace("\"", "'").trim();
             query = p.parse(QueryParser.escape(queryText));
             cq.add(rq, BooleanClause.Occur.MUST);
             cq.add(query, BooleanClause.Occur.MUST);
@@ -334,7 +337,7 @@ public class LuceneRecommender implements Recommender {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(e.toString() + " DOMAIN: " + domain);
+            logger.error(e.toString() + " DOMAIN: " + domain + " TEXT: " + text + " TITLE: " + title);
         }
         return recList;
     }
@@ -348,7 +351,7 @@ public class LuceneRecommender implements Recommender {
 //        pool.execute(new Thread() {
 //            public void run() {
 //
-                addDocument(_update);
+        addDocument(_update);
 //
 //            }
 //        });
