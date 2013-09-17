@@ -36,12 +36,20 @@ public class PathRecommender implements Recommender {
         PathRecommender pr = new PathRecommender();
         pr.init();
 
-        WeightedItemList wil = new WeightedItemList();
+        WeightedItemList wil = new WeightedItemList(3);
 
         wil.add(new WeightedItem(1L, 2L));
         wil.add(new WeightedItem(1L, 6L));
         wil.add(new WeightedItem(2L, 4L));
         wil.add(new WeightedItem(2L, 5L));
+        wil.add(new WeightedItem(4L, 5L));
+        wil.add(new WeightedItem(5L, 5L));
+        wil.add(new WeightedItem(6L, 5L));
+        wil.add(new WeightedItem(7L, 9L));
+        wil.add(new WeightedItem(7L, 9L));
+        wil.add(new WeightedItem(7L, 9L));
+
+        System.out.println(wil);
 
         Collections.sort(wil);
 
@@ -227,14 +235,21 @@ public class PathRecommender implements Recommender {
 
     public static class WeightedItemList extends ArrayList<WeightedItem> implements Serializable {
 
+        private static final int DEFAULT_MAX_SIZE = 100;
         private Map<Long, Integer> positions;
         private int curPos;
+        private int maxSize;
 
         public WeightedItemList() {
-            super();
+            this(DEFAULT_MAX_SIZE);
+        }
 
-            positions = new ConcurrentHashMap<Long, Integer>();
-            curPos = 0;
+        public WeightedItemList(int maxSize) {
+            super(maxSize);
+
+            positions = new ConcurrentHashMap<Long, Integer>(maxSize);
+            curPos = -1;
+            this.maxSize = maxSize;
         }
 
         @Override
@@ -245,10 +260,20 @@ public class PathRecommender implements Recommender {
         public boolean add(WeightedItem e, int w) {
             synchronized (this) {
                 if (!positions.containsKey(e.getItemId())) {
-                    positions.put(e.getItemId(), curPos);
-                    e.setFreq(w + e.getFreq());
-                    curPos++;
-                    return super.add(e);
+                    if ((curPos + 1) < maxSize) {
+                        curPos++;
+                        positions.put(e.getItemId(), curPos);
+                        e.setFreq(w + e.getFreq());
+                        return super.add(e);
+                    } else {
+                        // sort and delete last one
+                        Collections.sort(this);
+                        // delete (replace) last item
+                        WeightedItem old = super.set(curPos, e);
+                        positions.remove(old.getItemId());
+                        positions.put(e.getItemId(), curPos);
+                        return true;
+                    }
                 } else {
                     WeightedItem ee = get(positions.get(e.getItemId()));
                     ee.setFreq(w + ee.getFreq());
