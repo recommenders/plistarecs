@@ -1,10 +1,9 @@
-package net.recommenders.plista.rec;
+package net.recommenders.plista.rec.filter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,15 +17,12 @@ import org.apache.log4j.Logger;
  *
  * @author alejandr
  */
-public class UserFilterWrapper implements Recommender {
+public class UserFilter implements Filter {
 
-    private static final Logger logger = Logger.getLogger(UserFilterWrapper.class);
-    private WrappableRecommender rec;
+    private static final Logger logger = Logger.getLogger(UserFilter.class);
     private Map<Long, InteractionModel> domainModels;
 
-    public UserFilterWrapper(WrappableRecommender rec) {
-        this.rec = rec;
-
+    public UserFilter() {
         this.domainModels = new ConcurrentHashMap<Long, InteractionModel>();
     }
 
@@ -43,8 +39,8 @@ public class UserFilterWrapper implements Recommender {
         return model;
     }
 
-    public List<Long> recommend(Message message, Integer limit) {
-        List<Long> allItems = rec.recommendAll(message, limit);
+    public List<Long> filter(Message message, Integer limit, Recommender rec) {
+        List<Long> allItems = rec.recommend(message, limit);
         List<Long> filteredItems = new ArrayList<Long>();
         // DataModelHelper.getDataModel(this.numberOfDays, d)
         Long userID = message.getUserID();
@@ -70,10 +66,6 @@ public class UserFilterWrapper implements Recommender {
         return filteredItems;
     }
 
-    public void init() {
-        rec.init();
-    }
-
     public void impression(Message _impression) {
         final Long domain = _impression.getDomainID();
         final Long client = _impression.getUserID();
@@ -82,7 +74,6 @@ public class UserFilterWrapper implements Recommender {
         if (domain != null && client != null && item != null) {
             getModel(domain).addImpression(client, item);
         }
-        rec.impression(_impression);
     }
 
     public void click(Message _feedback) {
@@ -93,15 +84,9 @@ public class UserFilterWrapper implements Recommender {
         if (domain != null && client != null && item != null) {
             getModel(domain).addClick(client, item);
         }
-        rec.click(_feedback);
-    }
-
-    public void setProperties(Properties properties) {
-        rec.setProperties(properties);
     }
 
     public void update(Message _update) {
-        rec.update(_update);
     }
 
     public static interface InteractionModel {

@@ -1,4 +1,4 @@
-package net.recommenders.plista.rec;
+package net.recommenders.plista.rec.filter;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.mahout.cf.taste.model.DataModel;
@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.recommenders.plista.client.Message;
@@ -23,21 +22,18 @@ import org.apache.log4j.Logger;
  *
  * @author alejandr
  */
-public class UserFilterMahoutWrapper implements Recommender {
+public class UserMahoutFilter implements Filter {
 
-    private static final Logger logger = Logger.getLogger(UserFilterMahoutWrapper.class);
+    private static final Logger logger = Logger.getLogger(UserMahoutFilter.class);
     private static final long UPDATE_TIME = 10L * 60 * 1000; // 10 minutes
     private static final int NUM_THREADS = 5;
-    private WrappableRecommender rec;
     // number of days taken into account for the data model
     private int numberOfDays;
     private Map<Long, DataModel> domainModels;
     private long lastUpdate;
     private ExecutorService pool;
 
-    public UserFilterMahoutWrapper(WrappableRecommender rec) {
-        this.rec = rec;
-
+    public UserMahoutFilter() {
         this.pool = Executors.newFixedThreadPool(NUM_THREADS);
 
         this.numberOfDays = Integer.parseInt(System.getProperty("plista.numOfDays", "5"));
@@ -82,8 +78,8 @@ public class UserFilterMahoutWrapper implements Recommender {
         return model;
     }
 
-    public List<Long> recommend(Message message, Integer limit) {
-        List<Long> allItems = rec.recommendAll(message, limit);
+    public List<Long> filter(Message message, Integer limit, Recommender rec) {
+        List<Long> allItems = rec.recommend(message, limit);
         List<Long> filteredItems = new ArrayList<Long>();
         // DataModelHelper.getDataModel(this.numberOfDays, d)
         long userID = message.getUserID();
@@ -110,17 +106,11 @@ public class UserFilterMahoutWrapper implements Recommender {
         return filteredItems;
     }
 
-    public void init() {
-        rec.init();
-    }
-
     public void impression(Message _impression) {
         final Long domain = _impression.getDomainID();
         // write info directly in MAHOUT format
         // TODO
 //        pool.submit(new Thread(new MahoutWriter(domain + "_m_data_" + DateHelper.getDate() + ".txt", _impression, 3)));
-
-        rec.impression(_impression);
     }
 
     public void click(Message _feedback) {
@@ -129,15 +119,8 @@ public class UserFilterMahoutWrapper implements Recommender {
         // write info directly in MAHOUT format -> with pref 5
         // TODO
 //        pool.submit(new Thread(new MahoutWriter("m_data_" + DateHelper.getDate() + ".txt", client + "," + item, 5)));
-
-        rec.click(_feedback);
-    }
-
-    public void setProperties(Properties properties) {
-        rec.setProperties(properties);
     }
 
     public void update(Message _update) {
-        rec.update(_update);
     }
 }

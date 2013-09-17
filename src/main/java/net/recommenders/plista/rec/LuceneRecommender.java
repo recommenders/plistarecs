@@ -269,7 +269,7 @@ public class LuceneRecommender implements Recommender {
         Long domain = input.getDomainID();
 
         if (!domainWriter.containsKey(domain)) {
-            return null;
+            return new ArrayList<Long>();
         }
 
         String title = "";
@@ -281,7 +281,7 @@ public class LuceneRecommender implements Recommender {
             message = cachedMessages.get(itemID);
         } else //if (message == null)
         {
-            return null;
+            return new ArrayList<Long>();
         }
         System.out.println("\n\n" + message.getItemID() + "\t" + domain);
 
