@@ -1,6 +1,5 @@
 package net.recommenders.plista.rec;
 
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +10,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.recommenders.plista.client.Message;
+import net.recommenders.plista.log.DataLogger;
 import net.recommenders.plista.recommender.Recommender;
 
 /**
@@ -21,7 +21,7 @@ import net.recommenders.plista.recommender.Recommender;
  */
 public class PRCategoryBasedRecommender implements Recommender {
 
-    private static Logger logger = Logger.getLogger(PRCategoryBasedRecommender.class);
+    private static DataLogger logger = DataLogger.getLogger(PRCategoryBasedRecommender.class);
     protected Set<Long> forbiddenItems;
     protected PathRecommender.WeightedItemList allItems;
     protected Map<Long, Map<Long, PathRecommender.WeightedItemList>> mapDomainCategoryItems;

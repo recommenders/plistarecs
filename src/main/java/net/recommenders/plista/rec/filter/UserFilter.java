@@ -8,8 +8,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import net.recommenders.plista.client.Message;
+import net.recommenders.plista.log.DataLogger;
 import net.recommenders.plista.recommender.Recommender;
-import org.apache.log4j.Logger;
 
 /**
  *
@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
  */
 public class UserFilter implements Filter {
 
-    private static final Logger logger = Logger.getLogger(UserFilter.class);
+    private static final DataLogger logger = DataLogger.getLogger(UserFilter.class);
     private Map<Long, InteractionModel> domainModels;
 
     public UserFilter() {

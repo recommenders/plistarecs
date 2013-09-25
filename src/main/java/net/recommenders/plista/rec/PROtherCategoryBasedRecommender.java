@@ -1,6 +1,5 @@
 package net.recommenders.plista.rec;
 
-import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -8,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.recommenders.plista.client.Message;
+import net.recommenders.plista.log.DataLogger;
 import net.recommenders.plista.recommender.Recommender;
 
 /**
@@ -19,7 +19,7 @@ import net.recommenders.plista.recommender.Recommender;
  */
 public class PROtherCategoryBasedRecommender extends PRCategoryBasedRecommender implements Recommender {
 
-    private static Logger logger = Logger.getLogger(PROtherCategoryBasedRecommender.class);
+    private static DataLogger logger = DataLogger.getLogger(PROtherCategoryBasedRecommender.class);
 
     public PROtherCategoryBasedRecommender() {
         super();

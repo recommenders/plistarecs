@@ -10,9 +10,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import net.recommenders.plista.utils.ContentDB;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.de.GermanAnalyzer;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.store.Directory;
@@ -22,6 +20,7 @@ import org.apache.lucene.util.Version;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.recommenders.plista.client.Message;
+import net.recommenders.plista.log.DataLogger;
 import net.recommenders.plista.recommender.Recommender;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -51,7 +50,7 @@ import org.apache.lucene.search.TopDocs;
  */
 public class LuceneRecommender implements Recommender {
 
-    private static final Logger logger = Logger.getLogger(LuceneRecommender.class);
+    private static final DataLogger logger = DataLogger.getLogger(LuceneRecommender.class);
     private final Map<Long, IndexWriter> domainWriter = new HashMap<Long, IndexWriter>();
     private final Map<Long, IndexReader> domainReader = new HashMap<Long, IndexReader>();
     private Map<Long, HashSet<Long>> indexedDocs = new HashMap<Long, HashSet<Long>>();

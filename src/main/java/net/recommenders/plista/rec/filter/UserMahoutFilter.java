@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.recommenders.plista.client.Message;
+import net.recommenders.plista.log.DataLogger;
 import net.recommenders.plista.recommender.Recommender;
-import org.apache.log4j.Logger;
 
 /**
  *
@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
  */
 public class UserMahoutFilter implements Filter {
 
-    private static final Logger logger = Logger.getLogger(UserMahoutFilter.class);
+    private static final DataLogger logger = DataLogger.getLogger(UserMahoutFilter.class);
     private static final long UPDATE_TIME = 10L * 60 * 1000; // 10 minutes
     private static final int NUM_THREADS = 5;
     // number of days taken into account for the data model

@@ -1,17 +1,21 @@
 package net.recommenders.plista.utils;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import net.recommenders.plista.client.ChallengeMessage;
 import net.recommenders.plista.client.Message;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import net.recommenders.plista.log.DataLogger;
 
 /**
  * Created with IntelliJ IDEA. User: alan Date: 2013-08-30 Time: 11:10 To change
@@ -19,7 +23,7 @@ import java.util.Scanner;
  */
 public class UrlScraper {
 
-    private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
+    private final static DataLogger logger = DataLogger.getLogger(ContentDB.class);
     private static final String FILEPATH = "items/";
     private static ContentDB db = null;
     private Map<Long, String> identifiers;

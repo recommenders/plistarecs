@@ -3,22 +3,43 @@ package net.recommenders.plista.rec;
 import net.recommenders.plista.client.Message;
 import net.recommenders.plista.recommender.Recommender;
 import net.recommenders.plista.utils.ContentDB;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.de.GermanAnalyzer;
-import org.apache.lucene.document.*;
-import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import net.recommenders.plista.log.DataLogger;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.NumericRangeFilter;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 
 /**
  * An index for news articles
@@ -27,7 +48,7 @@ import java.util.concurrent.Executors;
  */
 public class SingleIndexLuceneRecommender implements Recommender {
 
-    private static final Logger logger = Logger.getLogger(SingleIndexLuceneRecommender.class);
+    private static final DataLogger logger = DataLogger.getLogger(SingleIndexLuceneRecommender.class);
     private  IndexWriter domainWriter;// = new HashMap<Long, IndexWriter>();
     private Map<Long, HashSet<Long>> indexedDocs = new HashMap<Long, HashSet<Long>>();
     private Map<Long, Message> cachedMessages = new HashMap<Long, Message>();

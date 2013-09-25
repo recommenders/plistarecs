@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"> 
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"> 
+    <!-- ================================= --> 
+    <!-- Preserve messages in a local file --> 
+    <!-- ================================= --> 
+    <appender name="ERR" class="org.apache.log4j.DailyRollingFileAppender"> 
+        <param name="File" value="error.log"/> 
+        <layout class="org.apache.log4j.PatternLayout"> 
+            <param name="ConversionPattern" value="%d %-5p %c [%t] (%F:%L) - %m%n"/> 
+        </layout> 
+    </appender>
+
+    <appender name="WARNING" class="org.apache.log4j.RollingFileAppender"> 
+        <param name="File" value="warning.log"/>
+        <layout class="org.apache.log4j.PatternLayout"> 
+            <param name="ConversionPattern" value="%m %d{ISO8601}%n"/> 
+        </layout> 
+    </appender>
+
+    <appender name="DATA" class="org.apache.log4j.rolling.RollingFileAppender"> 
+        <param name="File" value="data.log"/>
+        <layout class="org.apache.log4j.PatternLayout"> 
+            <param name="ConversionPattern" value="%m	%d{ISO8601}%n"/> 
+        </layout> 
+        <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+            <param name="ActiveFileName" value="data.log"/>
+            <param name="FileNamePattern" value="data.log.%d.gz"/>
+        </rollingPolicy>
+        <filter class="org.apache.log4j.varia.LevelMatchFilter">
+        <param name="LevelToMatch" value="DATALEVEL#net.recommenders.plista.log.DataLevel" />
+        <param name="AcceptOnMatch" value="true" />
+    </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+        </appender>
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender"> 
+        <param name="Target" value="System.out"/> 
+        <layout class="org.apache.log4j.PatternLayout"> 
+            <param name="ConversionPattern" value="%d %-5p %c [%t] (%F:%L) - %m%n"/> 
+        </layout> 
+    </appender> 
+    <!-- ================ --> 
+    <!-- Limit categories --> 
+    <!-- ================ --> 
+    <logger name="net.recommenders.plista.recommender" additivity="false"> 
+        <level value="DATALEVEL#net.recommenders.plista.log.DataLevel"/> 
+        <appender-ref ref="WARNING"/> 
+        <appender-ref ref="ERR"/> 
+        <appender-ref ref="DATA"/> 
+    </logger> 
+    <logger name="net.recommenders.plista.client" additivity="false"> 
+        <level value="DATALEVEL#net.recommenders.plista.log.DataLevel"/> 
+        <appender-ref ref="WARNING"/> 
+        <appender-ref ref="ERR"/> 
+        <appender-ref ref="DATA"/> 
+    </logger> 
+    <logger name="net.recommenders.plista.rec" additivity="false"> 
+        <level value="DATALEVEL#net.recommenders.plista.log.DataLevel"/> 
+        <appender-ref ref="WARNING"/> 
+        <appender-ref ref="ERR"/> 
+        <appender-ref ref="DATA"/> 
+    </logger> 
+    <!-- ======================= --> 
+    <!-- Setup the Root category --> 
+    <!-- ======================= --> 
+    <root> 
+        <appender-ref ref="CONSOLE"/> 
+        <appender-ref ref="ERR"/> 
+    </root> 
+</log4j:configuration> 
+
+

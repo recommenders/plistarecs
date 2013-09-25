@@ -2,13 +2,17 @@ package net.recommenders.plista.utils;
 
 import net.recommenders.plista.client.ChallengeMessage;
 import net.recommenders.plista.client.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
+import net.recommenders.plista.log.DataLogger;
 
 /**
  * Created with IntelliJ IDEA. User: alan Date: 2013-08-30 Time: 14:28 To change
@@ -16,7 +20,7 @@ import java.util.Set;
  */
 public class ContentDB {
 
-    private final static Logger logger = LoggerFactory.getLogger(ContentDB.class);
+    private final static DataLogger logger = DataLogger.getLogger(ContentDB.class);
     private static Connection con;
     private String dbFileName = "content.db";
     private Set<Long> items;

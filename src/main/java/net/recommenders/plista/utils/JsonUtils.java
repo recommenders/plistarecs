@@ -1,6 +1,6 @@
 package net.recommenders.plista.utils;
 
-import org.apache.log4j.Logger;
+import net.recommenders.plista.log.DataLogger;
 import org.json.JSONObject;
 import org.json.JSONException;
 
@@ -10,7 +10,7 @@ import org.json.JSONException;
  */
 public class JsonUtils {
 
-    private static final Logger logger = Logger.getLogger(JsonUtils.class);
+    private static final DataLogger logger = DataLogger.getLogger(JsonUtils.class);
 
     // general methods
     public static JSONObject getObject(String json) throws JSONException {
